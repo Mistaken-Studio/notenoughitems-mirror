@@ -59,7 +59,6 @@ namespace Mistaken.NotEnoughItems.Handlers
                 Pickup pickup;
                 MistakenCustomGrenade.TrySpawn(MistakenCustomItems.IMPACT_GRENADE, chamber._spawnpoint.position + (Vector3.up / 10), out pickup);
                 chamber._content.Add(pickup.Base);
-                RLogger.Log("IMPACT GRENADE", "SPAWN", $"Impact grenade spawned");
                 toSpawn--;
             }
         }
