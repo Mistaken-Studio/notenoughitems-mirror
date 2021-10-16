@@ -97,7 +97,7 @@ namespace Mistaken.NotEnoughItems.Handlers
                     () =>
                     {
                         if (ev.Player.Items.Count >= 8)
-                            MistakenCustomWeapon.TrySpawn(MistakenCustomItems.TASER, ev.Player.Position, out Pickup pickup);
+                            MistakenCustomWeapon.TrySpawn(MistakenCustomItems.TASER, ev.Player.Position, out _);
                         else
                             MistakenCustomWeapon.TryGive(ev.Player, MistakenCustomItems.TASER);
                     },

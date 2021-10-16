@@ -121,7 +121,7 @@ namespace Mistaken.NotEnoughItems.Items
             }
 
             RLogger.Log("MEDIC GUN", "RELOAD", $"Player {ev.Player.PlayerToString()} reloaded {this.Name}");
-            ev.Player.RemoveItem(ev.Player.Items.First(i => i.Type == ItemType.GrenadeHE));
+            ev.Player.RemoveItem(ev.Player.Items.First(i => i.Type == ItemType.Adrenaline));
             ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.ReloadedInfo, 3);
             ev.Player.Connection.Send(new RequestMessage(ev.Firearm.Serial, RequestType.Reload));
             ev.Firearm.Ammo++;

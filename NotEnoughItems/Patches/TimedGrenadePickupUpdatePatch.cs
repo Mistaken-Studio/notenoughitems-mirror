@@ -57,15 +57,22 @@ namespace Mistaken.NotEnoughItems.Patches
             thrownProjectile.NetworkInfo = __instance.Info;
             thrownProjectile.PreviousOwner = __instance._attacker;
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
-            if (MistakenCustomItems.IMPACT_GRENADE.Get().TrackedSerials.Contains(__instance.Info.Serial))
+            CustomItem item;
+            if (CustomItem.TryGet((int)MistakenCustomItems.IMPACT_GRENADE, out item) && !(item is null))
             {
-                ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
-                thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
+                if (item.TrackedSerials.Contains(__instance.Info.Serial))
+                {
+                    ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
+                    thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
+                }
             }
-            else if (MistakenCustomItems.STICKY_GRENADE.Get().TrackedSerials.Contains(__instance.Info.Serial))
+            else if (CustomItem.TryGet((int)MistakenCustomItems.STICKY_GRENADE, out item) && !(item is null))
             {
-                ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
-                thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
+                if (item.TrackedSerials.Contains(__instance.Info.Serial))
+                {
+                    ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
+                    thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
+                }
             }
 
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), __instance.Info);
