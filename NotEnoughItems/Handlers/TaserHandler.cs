@@ -97,9 +97,9 @@ namespace Mistaken.NotEnoughItems.Handlers
                     () =>
                     {
                         if (ev.Player.Items.Count >= 8)
-                            CustomItem.TrySpawn(1, ev.Player.Position, out Pickup pickup);
+                            MistakenCustomItems.TASER.Get().Spawn(ev.Player.Position);
                         else
-                            CustomItem.TryGive(ev.Player, 1);
+                            MistakenCustomItems.TASER.Get().Give(ev.Player);
                     },
                     "ChangingRole");
             }
