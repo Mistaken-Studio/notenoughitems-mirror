@@ -56,7 +56,8 @@ namespace Mistaken.NotEnoughItems.Handlers
             while (toSpawn > 0)
             {
                 var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
-                Pickup pickup = MistakenCustomItems.IMPACT_GRENADE.Get().Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
+                Pickup pickup;
+                MistakenCustomGrenade.TrySpawn(MistakenCustomItems.IMPACT_GRENADE, chamber._spawnpoint.position + (Vector3.up / 10), out pickup);
                 chamber._content.Add(pickup.Base);
                 RLogger.Log("IMPACT GRENADE", "SPAWN", $"Impact grenade spawned");
                 toSpawn--;

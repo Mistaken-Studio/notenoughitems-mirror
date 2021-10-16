@@ -9,7 +9,6 @@ using System.Linq;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Interfaces;
-using Exiled.CustomItems.API.Features;
 using Mistaken.API;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Diagnostics;
@@ -79,7 +78,8 @@ namespace Mistaken.NotEnoughItems.Handlers
             while (toSpawn > 0)
             {
                 var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
-                Pickup pickup = MistakenCustomItems.TASER.Get().Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
+                Pickup pickup;
+                MistakenCustomWeapon.TrySpawn(MistakenCustomItems.TASER, chamber._spawnpoint.position + (Vector3.up / 10), out pickup);
                 chamber._content.Add(pickup.Base);
                 toSpawn--;
             }
@@ -97,9 +97,9 @@ namespace Mistaken.NotEnoughItems.Handlers
                     () =>
                     {
                         if (ev.Player.Items.Count >= 8)
-                            MistakenCustomItems.TASER.Get().Spawn(ev.Player.Position);
+                            MistakenCustomWeapon.TrySpawn(MistakenCustomItems.TASER, ev.Player.Position, out Pickup pickup);
                         else
-                            MistakenCustomItems.TASER.Get().Give(ev.Player);
+                            MistakenCustomWeapon.TryGive(ev.Player, MistakenCustomItems.TASER);
                     },
                     "ChangingRole");
             }
