@@ -11,11 +11,13 @@ using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs;
+using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
 using MEC;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
+using Mistaken.Events.EventArgs;
 using Mistaken.RoundLogger;
 using UnityEngine;
 
@@ -26,6 +28,9 @@ namespace Mistaken.NotEnoughItems.Items
     {
         /// <inheritdoc/>
         public override MistakenCustomItems CustomItem => MistakenCustomItems.GRENADE_LAUNCHER;
+
+        /// <inheritdoc/>
+        public override bool AllowChangingAttachments => false;
 
         /// <inheritdoc/>
         public override ItemType Type { get; set; } = ItemType.GunCOM18;
@@ -61,20 +66,20 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            var pickup = base.Spawn(position);
-            pickup.Scale = Size;
-            pickup.Base.Info.Serial = pickup.Serial;
+            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
             RLogger.Log("GRENADE LAUNCHER", "SPAWN", $"{this.Name} spawned");
-            return pickup;
+            return this.Spawn(position, firearm);
         }
 
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position, Item item)
         {
-            var pickup = base.Spawn(position, item);
-            pickup.Scale = Size;
-            pickup.Base.Info.Serial = pickup.Serial;
-            return pickup;
+            var firearm = item as Exiled.API.Features.Items.Firearm;
+            firearm.Scale = Size;
+            firearm.Base.PickupDropModel.Info.Serial = firearm.Serial;
+            firearm.Base.Status = new FirearmStatus(firearm.Ammo, FirearmStatusFlags.Cocked, 146);
+            this.TrackedSerials.Add(firearm.Serial);
+            return firearm.Spawn(position);
         }
 
         internal static readonly Vector3 Size = new Vector3(2f, 1.5f, 1.5f);
@@ -105,9 +110,15 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
+        protected override void OnUnloadingFirearm(UnloadingFirearmEventArgs ev)
+        {
+            ev.IsAllowed = false;
+        }
+
+        /// <inheritdoc/>
         protected override void OnShooting(ShootingEventArgs ev)
         {
-            if (((Firearm)ev.Shooter.CurrentItem).Ammo == 0)
+            if (((Exiled.API.Features.Items.Firearm)ev.Shooter.CurrentItem).Ammo == 0)
             {
                 ev.Shooter.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.EmptyMagazineError, 3);
                 ev.IsAllowed = false;
@@ -116,7 +127,7 @@ namespace Mistaken.NotEnoughItems.Items
 
             StickyGrenadeItem.Throw(ev.Shooter);
             RLogger.Log("GRENADE LAUNCHER", "FIRE", $"Player {ev.Shooter.PlayerToString()} fired {this.Name}");
-            ((Firearm)ev.Shooter.CurrentItem).Ammo--;
+            ((Exiled.API.Features.Items.Firearm)ev.Shooter.CurrentItem).Ammo--;
             Hitmarker.SendHitmarker(ev.Shooter.Connection, 5f);
             ev.IsAllowed = false;
             return;

@@ -10,6 +10,7 @@ using System.Linq;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
+using Exiled.CustomItems.API.EventArgs;
 using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs;
 using InventorySystem.Items.Firearms.BasicMessages;
@@ -17,6 +18,7 @@ using MEC;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
+using Mistaken.Events.EventArgs;
 using Mistaken.RoundLogger;
 using UnityEngine;
 
@@ -27,6 +29,9 @@ namespace Mistaken.NotEnoughItems.Items
     {
         /// <inheritdoc/>
         public override MistakenCustomItems CustomItem => MistakenCustomItems.MEDIC_GUN;
+
+        /// <inheritdoc/>
+        public override bool AllowChangingAttachments => false;
 
         /// <inheritdoc/>
         public override ItemType Type { get; set; } = ItemType.GunRevolver;
@@ -55,14 +60,9 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage)
         {
-            Item item = player.AddItem(this.Type);
-            Firearm firearm = item as Firearm;
-            if (firearm != null)
-            {
-                firearm.Ammo = this.ClipSize;
-                firearm.Base.Status = new InventorySystem.Items.Firearms.FirearmStatus(firearm.Ammo, firearm.Base.Status.Flags, 594);
-            }
-
+            Firearm item = (Firearm)player.AddItem(this.Type);
+            item.Ammo = this.ClipSize;
+            item.Base.Status = new InventorySystem.Items.Firearms.FirearmStatus(item.Ammo, item.Base.Status.Flags, 594);
             RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
             this.TrackedSerials.Add(item.Serial);
         }
@@ -70,14 +70,8 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            var item = new Item(this.Type);
-            Firearm firearm = item as Firearm;
-            if (!(firearm is null))
-            {
-                firearm.Ammo = this.ClipSize;
-                firearm.Base.Status = new InventorySystem.Items.Firearms.FirearmStatus(this.ClipSize, firearm.Base.Status.Flags, 594);
-            }
-
+            var item = new Firearm(this.Type);
+            item.Ammo = this.ClipSize;
             RLogger.Log("MEDIC GUN", "SPAWN", $"Spawned {this.Name}");
             return this.Spawn(position, item);
         }
@@ -85,13 +79,12 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position, Item item)
         {
-            var pickup = base.Spawn(position, item);
-            pickup.Base.Info.Serial = pickup.Serial;
-            pickup.Scale = Size;
-            Firearm firearm = (Firearm)item;
-            if (!(firearm is null))
-                ((InventorySystem.Items.Firearms.FirearmPickup)pickup.Base).Status = firearm.Base.Status;
-            return pickup;
+            var firearm = item as Firearm;
+            firearm.Base.PickupDropModel.Info.Serial = firearm.Serial;
+            firearm.Scale = Size;
+            firearm.Base.Status = new InventorySystem.Items.Firearms.FirearmStatus(firearm.Ammo, InventorySystem.Items.Firearms.FirearmStatusFlags.Cocked, 594);
+            this.TrackedSerials.Add(firearm.Serial);
+            return firearm.Spawn(position);
         }
 
         internal static readonly Vector3 Size = new Vector3(2, 2, 2);
@@ -125,6 +118,12 @@ namespace Mistaken.NotEnoughItems.Items
             ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.ReloadedInfo, 3);
             ev.Player.Connection.Send(new RequestMessage(ev.Firearm.Serial, RequestType.Reload));
             ev.Firearm.Ammo++;
+            ev.IsAllowed = false;
+        }
+
+        /// <inheritdoc/>
+        protected override void OnUnloadingFirearm(UnloadingFirearmEventArgs ev)
+        {
             ev.IsAllowed = false;
         }
 

@@ -85,20 +85,28 @@ namespace Mistaken.NotEnoughItems.Items
         public override float FuseTime { get; set; } = 3f;
 
         /// <inheritdoc/>
+        public override void Give(Player player, bool displayMessage = true)
+        {
+            RLogger.Log("STICKY GRENADE", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
+            base.Give(player, displayMessage);
+        }
+
+        /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            var pickup = base.Spawn(position);
-            pickup.Base.Info.Serial = pickup.Serial;
-            RLogger.Log("STICKY GRENADE", "SPAWN", $"Spawned {this.Name}");
-            return pickup;
+            ExplosiveGrenade grenade = new ExplosiveGrenade(this.Type);
+            RLogger.Log("STICKY GRENADE", "SPAWN", $"{this.Name} spawned");
+            return this.Spawn(position, grenade);
         }
 
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position, Item item)
         {
-            var pickup = base.Spawn(position, item);
-            pickup.Base.Info.Serial = pickup.Serial;
-            return pickup;
+            var grenade = item as Throwable;
+            if (grenade is null) Log.Debug("Throwable is null");
+            grenade.Base.PickupDropModel.Info.Serial = grenade.Serial;
+            this.TrackedSerials.Add(grenade.Serial);
+            return grenade.Spawn(position);
         }
 
         /// <inheritdoc/>

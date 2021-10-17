@@ -41,7 +41,7 @@ namespace Mistaken.NotEnoughItems.Handlers
             Exiled.Events.Handlers.Server.RoundStarted -= this.Handle(() => this.Server_RoundStarted(), "RoundStart");
         }
 
-        internal static readonly Vector3 Size = new Vector3(1f, .40f, 1f);
+        internal static readonly Vector3 Size = new Vector3(1f, 0.4f, 1f);
 
         internal static ImpHandler Instance { get; private set; }
 
@@ -56,8 +56,7 @@ namespace Mistaken.NotEnoughItems.Handlers
             while (toSpawn > 0)
             {
                 var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
-                Pickup pickup;
-                MistakenCustomGrenade.TrySpawn(MistakenCustomItems.IMPACT_GRENADE, chamber._spawnpoint.position + (Vector3.up / 10), out pickup);
+                MistakenCustomGrenade.TrySpawn(MistakenCustomItems.IMPACT_GRENADE, chamber._spawnpoint.position + (Vector3.up / 10), out var pickup);
                 chamber._content.Add(pickup.Base);
                 toSpawn--;
             }

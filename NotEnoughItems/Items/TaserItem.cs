@@ -12,12 +12,14 @@ using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
+using Exiled.Events.EventArgs;
 using InventorySystem.Items.Firearms;
 using MEC;
 using Mistaken.API;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
+using Mistaken.Events.EventArgs;
 using Mistaken.RoundLogger;
 using UnityEngine;
 
@@ -32,7 +34,10 @@ namespace Mistaken.NotEnoughItems.Items
         public override MistakenCustomItems CustomItem => MistakenCustomItems.TASER;
 
         /// <inheritdoc/>
-        public override ItemType Type { get; set; } = ItemType.GunCOM18;
+        public override bool AllowChangingAttachments => false;
+
+        /// <inheritdoc/>
+        public override ItemType Type { get; set; } = ItemType.GunCOM15;
 
         /// <inheritdoc/>
         public override string Name { get; set; } = "Taser";
@@ -56,32 +61,38 @@ namespace Mistaken.NotEnoughItems.Items
         public override float Damage { get; set; } = 5;
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position, Item item)
+        public override void Give(Player player, bool displayMessage = true)
         {
-            var pickup = base.Spawn(position, item);
-            pickup.Scale = Size;
-            if (this.cooldowns.TryGetValue(item.Serial, out DateTime value))
-            {
-                this.cooldowns.Add(pickup.Serial, value);
-                this.cooldowns.Remove(item.Serial);
-            }
-
-            return pickup;
+            RLogger.Log("STICKY GRENADE", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
+            base.Give(player, displayMessage);
         }
 
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            var pickup = base.Spawn(position);
-            pickup.Scale = Size;
-            var firearmPickup = pickup.Base as FirearmPickup;
-            firearmPickup.Status = new FirearmStatus(1, FirearmStatusFlags.Cocked, firearmPickup.Status.Attachments);
-            firearmPickup.NetworkStatus = firearmPickup.Status;
+            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
             RLogger.Log("TASER", "SPAWN", $"Taser spawned");
-            return pickup;
+            return this.Spawn(position, firearm);
         }
 
-        internal static readonly Vector3 Size = new Vector3(.75f, .75f, .75f);
+        /// <inheritdoc/>
+        public override Pickup Spawn(Vector3 position, Item item)
+        {
+            var firearm = item as Exiled.API.Features.Items.Firearm;
+            firearm.Base.PickupDropModel.Info.Serial = firearm.Serial;
+            firearm.Scale = Size;
+            if (this.cooldowns.TryGetValue(item.Serial, out DateTime value))
+            {
+                this.cooldowns.Remove(item.Serial);
+                this.cooldowns.Add(firearm.Serial, value);
+            }
+
+            firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
+            this.TrackedSerials.Add(firearm.Serial);
+            return firearm.Spawn(position);
+        }
+
+        internal static readonly Vector3 Size = new Vector3(1f, 0.65f, 1f);
 
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
@@ -90,7 +101,13 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
+        protected override void OnReloading(ReloadingWeaponEventArgs ev)
+        {
+            ev.IsAllowed = false;
+        }
+
+        /// <inheritdoc/>
+        protected override void OnUnloadingFirearm(UnloadingFirearmEventArgs ev)
         {
             ev.IsAllowed = false;
         }

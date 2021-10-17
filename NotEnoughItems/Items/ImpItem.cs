@@ -59,20 +59,20 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            var pickup = base.Spawn(position);
-            pickup.Scale = Handlers.ImpHandler.Size;
-            pickup.Base.Info.Serial = pickup.Serial;
+            ExplosiveGrenade grenade = new ExplosiveGrenade(this.Type);
             RLogger.Log("IMPACT GRENADE", "SPAWN", $"{this.Name} spawned");
-            return pickup;
+            return this.Spawn(position, grenade);
         }
 
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position, Item item)
         {
-            var pickup = base.Spawn(position, item);
-            pickup.Scale = Handlers.ImpHandler.Size;
-            pickup.Base.Info.Serial = pickup.Serial;
-            return pickup;
+            var grenade = item as Throwable;
+            if (grenade is null) Log.Debug("Throwable is null");
+            grenade.Scale = Handlers.ImpHandler.Size;
+            grenade.Base.PickupDropModel.Info.Serial = grenade.Serial;
+            this.TrackedSerials.Add(grenade.Serial);
+            return grenade.Spawn(position);
         }
 
         /// <inheritdoc/>
