@@ -58,7 +58,7 @@ namespace Mistaken.NotEnoughItems.Patches
             thrownProjectile.PreviousOwner = __instance._attacker;
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
             CustomItem item;
-            if (CustomItem.TryGet((int)MistakenCustomItems.IMPACT_GRENADE, out item) && !(item is null))
+            if (MistakenCustomItems.IMPACT_GRENADE.TryGet(out item) && !(item is null))
             {
                 if (item.TrackedSerials.Contains(__instance.Info.Serial))
                 {
@@ -66,7 +66,8 @@ namespace Mistaken.NotEnoughItems.Patches
                     thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
                 }
             }
-            else if (CustomItem.TryGet((int)MistakenCustomItems.STICKY_GRENADE, out item) && !(item is null))
+
+            if (MistakenCustomItems.STICKY_GRENADE.TryGet(out item) && !(item is null))
             {
                 if (item.TrackedSerials.Contains(__instance.Info.Serial))
                 {
