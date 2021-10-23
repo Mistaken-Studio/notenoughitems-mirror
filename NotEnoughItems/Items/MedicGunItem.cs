@@ -10,9 +10,9 @@ using System.Linq;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.EventArgs;
 using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs;
+using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
 using MEC;
 using Mistaken.API.CustomItems;
@@ -60,17 +60,33 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage)
         {
-            Firearm item = (Firearm)player.AddItem(this.Type);
-            item.Ammo = this.ClipSize;
-            item.Base.Status = new InventorySystem.Items.Firearms.FirearmStatus(item.Ammo, item.Base.Status.Flags, 594);
+            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
+            player.AddItem(firearm);
+            firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.MagazineInserted, 594);
             RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
-            this.TrackedSerials.Add(item.Serial);
+
+            this.TrackedSerials.Add(firearm.Serial);
+            if (displayMessage)
+                this.ShowPickedUpMessage(player);
+        }
+
+        /// <inheritdoc/>
+        public override void Give(Player player, Pickup pickup, bool displayMessage = true)
+        {
+            FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            player.AddItem(pickup);
+            firearm.Status = new FirearmStatus(firearm.Status.Ammo, firearm.Status.Flags, 594);
+            RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
+
+            this.TrackedSerials.Add(firearm.Info.Serial);
+            if (displayMessage)
+                this.ShowPickedUpMessage(player);
         }
 
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            var item = new Firearm(this.Type);
+            var item = new Exiled.API.Features.Items.Firearm(this.Type);
             item.Ammo = this.ClipSize;
             RLogger.Log("MEDIC GUN", "SPAWN", $"Spawned {this.Name}");
             return this.Spawn(position, item);
@@ -79,12 +95,13 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position, Item item)
         {
-            var firearm = item as Firearm;
+            var firearm = item as Exiled.API.Features.Items.Firearm;
             firearm.Base.PickupDropModel.Info.Serial = firearm.Serial;
             firearm.Scale = Size;
-            firearm.Base.Status = new InventorySystem.Items.Firearms.FirearmStatus(firearm.Ammo, InventorySystem.Items.Firearms.FirearmStatusFlags.Cocked, 594);
             this.TrackedSerials.Add(firearm.Serial);
-            return firearm.Spawn(position);
+            var pickup = firearm.Spawn(position);
+            ((FirearmPickup)pickup.Base).Status = new FirearmStatus(firearm.Ammo, FirearmStatusFlags.Cocked, 594);
+            return pickup;
         }
 
         internal static readonly Vector3 Size = new Vector3(2, 2, 2);
