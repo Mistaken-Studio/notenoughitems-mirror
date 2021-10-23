@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using InventorySystem.Items.ThrowableProjectiles;
 using UnityEngine;
 
@@ -15,14 +16,17 @@ namespace Mistaken.NotEnoughItems.Components
     public class ImpComponent : MonoBehaviour
     {
         private ExplosionGrenade grenade;
+        private DateTime elapsedTime;
 
         private void Awake()
         {
             this.grenade = this.GetComponent<ExplosionGrenade>();
+            this.elapsedTime = DateTime.Now;
         }
 
         private void OnCollisionEnter(Collision collider)
         {
+            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f) return;
             if (collider.gameObject.TryGetComponent<IDestructible>(out var component))
             {
                 if (ReferenceHub.TryGetHubNetID(component.NetworkId, out var referenceHub))

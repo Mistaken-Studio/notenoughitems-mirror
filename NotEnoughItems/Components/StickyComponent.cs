@@ -26,6 +26,7 @@ namespace Mistaken.NotEnoughItems.Components
         private int owner;
         private bool ignoreOwner;
         private DateTime elapsedTime;
+        private Mistaken.API.Components.InRange inRange;
 
         private void Awake()
         {
@@ -43,16 +44,17 @@ namespace Mistaken.NotEnoughItems.Components
                 this.positionDiff = this.grenadePlayer.Position - this.transform.position;
             };
 
-            Mistaken.API.Components.InRange.Spawn(this.transform, Vector3.zero, new Vector3(0.05f, 0.05f, 0.05f), this.onEnter);
+            this.inRange = Mistaken.API.Components.InRange.Spawn(this.transform, Vector3.zero, new Vector3(0.05f, 0.05f, 0.05f), this.onEnter);
             Timing.CallDelayed(0.5f, () => this.ignoreOwner = false);
         }
 
         private void OnCollisionEnter(Collision collision)
         {
-            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.25f) return;
+            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f) return;
             if (!this.onSurfaceUsed && !this.onPlayerUsed)
             {
                 this.rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+                Destroy(this.inRange);
                 this.onSurfaceUsed = true;
             }
         }
