@@ -125,7 +125,7 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnUnloadingFirearm(Events.EventArgs.UnloadingWeaponEventArgs ev)
+        protected override void OnUnloadingWeapon(Exiled.Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }

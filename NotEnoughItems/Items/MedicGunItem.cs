@@ -11,7 +11,6 @@ using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
-using Exiled.Events.EventArgs;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
 using MEC;
@@ -113,7 +112,7 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnReloading(ReloadingWeaponEventArgs ev)
+        protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
             if (ev.Firearm.Ammo >= this.ClipSize)
             {
@@ -138,13 +137,13 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnUnloadingFirearm(Events.EventArgs.UnloadingWeaponEventArgs ev)
+        protected override void OnUnloadingWeapon(Exiled.Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
-        protected override void OnShot(ShotEventArgs ev)
+        protected override void OnShot(Exiled.Events.EventArgs.ShotEventArgs ev)
         {
             if (!(ev.Target is null))
             {
