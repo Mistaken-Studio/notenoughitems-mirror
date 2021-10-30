@@ -8,6 +8,7 @@ using System;
 using Exiled.API.Features;
 using InventorySystem.Items.ThrowableProjectiles;
 using MEC;
+using Mirror;
 using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Components
@@ -54,7 +55,7 @@ namespace Mistaken.NotEnoughItems.Components
             if (!this.onSurfaceUsed && !this.onPlayerUsed)
             {
                 this.rigidbody.constraints = RigidbodyConstraints.FreezeAll;
-                Destroy(this.inRange);
+                NetworkServer.Destroy(this.inRange.gameObject);
                 this.onSurfaceUsed = true;
             }
         }

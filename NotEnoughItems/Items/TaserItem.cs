@@ -12,14 +12,12 @@ using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
-using Exiled.Events.EventArgs;
 using InventorySystem.Items.Firearms;
 using MEC;
 using Mistaken.API;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
-using Mistaken.Events.EventArgs;
 using Mistaken.RoundLogger;
 using UnityEngine;
 
@@ -121,13 +119,13 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnReloading(ReloadingWeaponEventArgs ev)
+        protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
-        protected override void OnUnloadingFirearm(UnloadingWeaponEventArgs ev)
+        protected override void OnUnloadingFirearm(Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }

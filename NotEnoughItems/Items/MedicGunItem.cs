@@ -18,7 +18,6 @@ using MEC;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
-using Mistaken.Events.EventArgs;
 using Mistaken.RoundLogger;
 using UnityEngine;
 
@@ -139,7 +138,7 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnUnloadingFirearm(UnloadingWeaponEventArgs ev)
+        protected override void OnUnloadingFirearm(Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }
