@@ -43,9 +43,6 @@ namespace Mistaken.NotEnoughItems.Patches
             if (!ThrowedItems.Contains(__instance))
                 return true;
 
-            if (__instance.Owner.characterClassManager.CurRole.team == Team.CHI || __instance.Owner.characterClassManager.CurClass == RoleType.ClassD)
-                Respawning.GameplayTickets.Singleton.HandleItemTickets(__instance.OwnerInventory.CurItem);
-
             ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(__instance.Projectile, __instance.Owner.PlayerCameraReference.position, __instance.Owner.PlayerCameraReference.rotation);
             InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
             {
@@ -64,17 +61,19 @@ namespace Mistaken.NotEnoughItems.Patches
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             Rigidbody rb;
             if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
-                __instance.PropelBody(rb, torque, forceAmount * 1.8f, upwardFactor / 1.4f);
+                __instance.PropelBody(rb, torque, forceAmount * 2.2f, upwardFactor / 1.3f);
 
-            if (MistakenCustomItems.IMPACT_GRENADE.Get().TrackedSerials.Contains(__instance.ItemSerial))
+            CustomItem item;
+            if (MistakenCustomItems.IMPACT_GRENADE.TryGet(out item) && !(item is null))
             {
-                Log.Debug("impact");
-                thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
+                if (item.TrackedSerials.Contains(__instance.ItemSerial))
+                    thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
             }
-            else
+
+            if (MistakenCustomItems.STICKY_GRENADE.TryGet(out item) && !(item is null))
             {
-                Log.Debug("sticky");
-                thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
+                if (item.TrackedSerials.Contains(__instance.ItemSerial))
+                    thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
             }
 
             thrownProjectile.ServerActivate();

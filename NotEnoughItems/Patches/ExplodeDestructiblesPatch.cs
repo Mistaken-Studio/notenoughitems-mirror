@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using CustomPlayerEffects;
+using Exiled.API.Features;
 using HarmonyLib;
 using InventorySystem.Items.Firearms.BasicMessages;
 using InventorySystem.Items.MicroHID;
@@ -29,24 +30,22 @@ namespace Mistaken.NotEnoughItems.Patches
         private static bool Prefix(ExplosionGrenade __instance, IDestructible dest, ref bool __result)
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
+            if (!Grenades.Contains(__instance))
+                return true;
+
             if (Physics.Linecast(dest.CenterOfMass, __instance.transform.position, MicroHIDItem.WallMask))
             {
                 __result = false;
                 return false;
             }
 
-            float time;
-            if (Grenades.Contains(__instance))
-                time = Vector3.Distance(dest.CenterOfMass, __instance.transform.position) * 3;
-            else
-                return true;
-            float num = __instance._playerDamageOverDistance.Evaluate(time);
+            float time = Vector3.Distance(dest.CenterOfMass, __instance.transform.position);
+            float num = __instance._playerDamageOverDistance.Evaluate(time) / 3.2f;
             ReferenceHub referenceHub;
             bool flag = ReferenceHub.TryGetHubNetID(dest.NetworkId, out referenceHub);
             if (flag && referenceHub.characterClassManager.CurRole.team == Team.SCP)
                 num *= __instance._scpDamageMultiplier;
 
-            num /= 1.5f;
             if (num > 0f && dest.Damage(num, __instance, __instance.PreviousOwner, dest.CenterOfMass) && flag)
             {
                 float num2 = __instance._effectDurationOverDistance.Evaluate(time);
