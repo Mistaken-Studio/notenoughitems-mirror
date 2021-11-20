@@ -5,12 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System.Linq;
-using Exiled.API.Features.Items;
 using Exiled.API.Interfaces;
-using Exiled.CustomItems.API.Features;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Diagnostics;
-using Mistaken.RoundLogger;
 using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Handlers
@@ -32,13 +29,13 @@ namespace Mistaken.NotEnoughItems.Handlers
         /// <inheritdoc/>
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Server.RoundStarted += this.Handle(() => this.Server_RoundStarted(), "RoundStart");
+            Exiled.Events.Handlers.Server.RoundStarted += this.Server_RoundStarted;
         }
 
         /// <inheritdoc/>
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Server.RoundStarted -= this.Handle(() => this.Server_RoundStarted(), "RoundStart");
+            Exiled.Events.Handlers.Server.RoundStarted -= this.Server_RoundStarted;
         }
 
         internal static readonly Vector3 Size = new Vector3(1f, 0.4f, 1f);

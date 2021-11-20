@@ -107,7 +107,7 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnUnloadingFirearm(UnloadingFirearmEventArgs ev)
+        protected override void OnUnloadingWeapon(UnloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }
@@ -144,7 +144,7 @@ namespace Mistaken.NotEnoughItems.Items
                         return;
                     }
 
-                    if (targetPlayer.GetSessionVar<bool>(SessionVarType.SPAWN_PROTECT))
+                    if (targetPlayer.GetSessionVariable<bool>(SessionVarType.SPAWN_PROTECT))
                     {
                         RLogger.Log("TASER", "REVERSED", $"{ev.Shooter.PlayerToString()} hit {targetPlayer.PlayerToString()} but effects were reversed because of spawn protect");
                         targetPlayer = ev.Shooter;
@@ -161,8 +161,8 @@ namespace Mistaken.NotEnoughItems.Items
                         if (targetPlayer.CurrentItem != null && !Handlers.TaserHandler.UsableItems.Contains(targetPlayer.CurrentItem.Type))
                         {
                             Exiled.Events.Handlers.Player.OnDroppingItem(new Exiled.Events.EventArgs.DroppingItemEventArgs(targetPlayer, targetPlayer.CurrentItem.Base, false));
-                            var pickup = MapPlus.Spawn(targetPlayer.CurrentItem.Type, targetPlayer.Position, Quaternion.identity, Vector3.one);
-                            pickup.ItemSerial = targetPlayer.CurrentItem.Serial;
+                            var pickup = new Item(targetPlayer.CurrentItem.Type).Spawn(targetPlayer.Position);
+                            pickup.Base.Info.Serial = targetPlayer.CurrentItem.Serial;
 
                             targetPlayer.DropItem(targetPlayer.CurrentItem);
                             targetPlayer.RemoveItem(targetPlayer.CurrentItem);

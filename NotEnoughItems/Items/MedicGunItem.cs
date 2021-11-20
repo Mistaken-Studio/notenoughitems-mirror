@@ -122,7 +122,7 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnUnloadingFirearm(UnloadingFirearmEventArgs ev)
+        protected override void OnUnloadingWeapon(UnloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }

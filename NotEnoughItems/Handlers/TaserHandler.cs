@@ -34,15 +34,15 @@ namespace Mistaken.NotEnoughItems.Handlers
         /// <inheritdoc/>
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Server.RoundStarted += this.Handle(() => this.Server_RoundStarted(), "RoundStart");
-            Exiled.Events.Handlers.Player.ChangingRole += this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
+            Exiled.Events.Handlers.Server.RoundStarted += this.Server_RoundStarted;
+            Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
         }
 
         /// <inheritdoc/>
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Server.RoundStarted -= this.Handle(() => this.Server_RoundStarted(), "RoundStart");
-            Exiled.Events.Handlers.Player.ChangingRole -= this.Handle<Exiled.Events.EventArgs.ChangingRoleEventArgs>((ev) => this.Player_ChangingRole(ev));
+            Exiled.Events.Handlers.Server.RoundStarted -= this.Server_RoundStarted;
+            Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
         }
 
         internal static readonly Dictionary<GameObject, Door> Doors = new Dictionary<GameObject, Door>();
@@ -86,7 +86,7 @@ namespace Mistaken.NotEnoughItems.Handlers
 
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
         {
-            if (ev.Player.GetSessionVar<bool>(SessionVarType.ITEM_LESS_CLSSS_CHANGE))
+            if (ev.Player.GetSessionVariable<bool>(SessionVarType.ITEM_LESS_CLSSS_CHANGE))
                 return;
             if (ev.NewRole == RoleType.FacilityGuard)
             {
