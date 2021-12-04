@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
-using CustomPlayerEffects;
 using HarmonyLib;
 using InventorySystem.Items.Firearms.BasicMessages;
 using InventorySystem.Items.MicroHID;
@@ -26,48 +25,49 @@ namespace Mistaken.NotEnoughItems.Patches
         public static HashSet<ThrownProjectile> Grenades { get; set; } = new HashSet<ThrownProjectile>();
 
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-        private static bool Prefix(ExplosionGrenade __instance, IDestructible dest, ref bool __result)
+        private static bool Prefix(ExplosionGrenade __instance, IDestructible dest, Footprinting.Footprint attacker, Vector3 pos, ExplosionGrenade setts, ref bool __result)
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
-            if (Physics.Linecast(dest.CenterOfMass, __instance.transform.position, MicroHIDItem.WallMask))
+            if (Physics.Linecast(dest.CenterOfMass, pos, MicroHIDItem.WallMask))
             {
                 __result = false;
                 return false;
             }
 
-            float time;
-            if (Grenades.Contains(__instance))
-                time = Vector3.Distance(dest.CenterOfMass, __instance.transform.position) * 3;
-            else
+            if (!Grenades.Contains(__instance))
                 return true;
-            float num = __instance._playerDamageOverDistance.Evaluate(time);
+
+            Vector3 a = dest.CenterOfMass - pos;
+            float magnitude = a.magnitude;
+            float num = setts._playerDamageOverDistance.Evaluate(magnitude);
             ReferenceHub referenceHub;
             bool flag = ReferenceHub.TryGetHubNetID(dest.NetworkId, out referenceHub);
-            if (flag && referenceHub.characterClassManager.CurRole.team == Team.SCP)
-                num *= __instance._scpDamageMultiplier;
+            if (flag && referenceHub.characterClassManager.CurRole.team == global::Team.SCP)
+                num *= setts._scpDamageMultiplier;
 
-            num /= 1.5f;
-            if (num > 0f && dest.Damage(num, __instance, __instance.PreviousOwner, dest.CenterOfMass) && flag)
+            Vector3 force = ((1f - (magnitude / setts._maxRadius)) * (a / magnitude) * setts._rigidbodyBaseForce) + (Vector3.up * setts._rigidbodyLiftForce);
+            if (num > 0f && dest.Damage(num, new PlayerStatsSystem.ExplosionDamageHandler(attacker, force, num, 25), dest.CenterOfMass) && flag)
             {
-                float num2 = __instance._effectDurationOverDistance.Evaluate(time);
-                bool flag2 = __instance.PreviousOwner.Hub == referenceHub;
-                if (num2 > 0f && (flag2 || HitboxIdentity.CheckFriendlyFire(__instance.PreviousOwner.Role, referenceHub.characterClassManager.CurClass, false)))
+                float num2 = setts._effectDurationOverDistance.Evaluate(magnitude);
+                bool flag2 = attacker.Hub == referenceHub;
+
+                if (num2 > 0f && (flag2 || HitboxIdentity.CheckFriendlyFire(attacker.Role, referenceHub.characterClassManager.CurClass, false)))
                 {
-                    referenceHub.playerEffectsController.EnableEffect<Burned>(num2 * __instance._burnedDuration, true);
-                    referenceHub.playerEffectsController.EnableEffect<Deafened>(num2 * __instance._deafenedDuration, true);
-                    referenceHub.playerEffectsController.EnableEffect<Concussed>(num2 * __instance._concussedDuration, true);
+                    referenceHub.playerEffectsController.EnableEffect<CustomPlayerEffects.Burned>(num2 * setts._burnedDuration, true);
+                    referenceHub.playerEffectsController.EnableEffect<CustomPlayerEffects.Deafened>(num2 * setts._deafenedDuration, true);
+                    referenceHub.playerEffectsController.EnableEffect<CustomPlayerEffects.Concussed>(num2 * setts._concussedDuration, true);
                 }
 
-                if (!flag2 && __instance.PreviousOwner.Hub != null)
-                    Hitmarker.SendHitmarker(__instance.PreviousOwner.Hub.networkIdentity.connectionToClient, 100);
+                if (!flag2 && attacker.Hub != null)
+                    Hitmarker.SendHitmarker(attacker.Hub, 1f);
 
                 referenceHub.inventory.connectionToClient.Send<GunHitMessage>(
                     new GunHitMessage
-                    {
-                        Weapon = ItemType.None,
-                        Damage = (byte)Mathf.Clamp(num * 2.5f, 0f, 255f),
-                        DamagePosition = __instance.transform.position,
-                    }, 0);
+                {
+                    Weapon = global::ItemType.None,
+                    Damage = (byte)Mathf.Clamp(num * 2.5f, 0f, 255f),
+                    DamagePosition = pos,
+                }, 0);
             }
 
             __result = true;

@@ -44,7 +44,7 @@ namespace Mistaken.NotEnoughItems.Patches
                 return true;
 
             if (__instance.Owner.characterClassManager.CurRole.team == Team.CHI || __instance.Owner.characterClassManager.CurClass == RoleType.ClassD)
-                Respawning.GameplayTickets.Singleton.HandleItemTickets(__instance.OwnerInventory.CurItem);
+                Respawning.GameplayTickets.Singleton.HandleItemTickets(__instance.OwnerInventory.CurInstance);
 
             ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(__instance.Projectile, __instance.Owner.PlayerCameraReference.position, __instance.Owner.PlayerCameraReference.rotation);
             InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
