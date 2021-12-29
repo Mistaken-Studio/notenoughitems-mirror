@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="MedicGunItem.cs" company="Mistaken">
 // Copyright (c) Mistaken. All rights reserved.
 // </copyright>

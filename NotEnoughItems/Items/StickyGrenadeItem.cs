@@ -33,7 +33,7 @@ namespace Mistaken.NotEnoughItems.Items
         {
             var grenade = new Throwable(ItemType.GrenadeHE, player);
             if (grenade.Base.Owner.characterClassManager.CurRole.team == Team.CHI || grenade.Base.Owner.characterClassManager.CurClass == RoleType.ClassD)
-                Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base.OwnerInventory.CurItem);
+                Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base.OwnerInventory.CurInstance);
 
             ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, grenade.Base.Owner.PlayerCameraReference.position, grenade.Base.Owner.PlayerCameraReference.rotation);
             InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
@@ -53,7 +53,7 @@ namespace Mistaken.NotEnoughItems.Items
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             Rigidbody rb;
             if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
-                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), 50, 0.2f);
+                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), Vector3.zero, 50, 0.2f);
 
             thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
             thrownProjectile.ServerActivate();
