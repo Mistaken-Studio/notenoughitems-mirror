@@ -20,7 +20,7 @@ namespace Mistaken.NotEnoughItems.Patches
     /// <summary>
     /// Patch for adding ImpComponent to thrown grenades.
     /// </summary>
-    [HarmonyPatch(typeof(ThrowableItem), "ServerThrow", new Type[] { typeof(float), typeof(float), typeof(Vector3) })]
+    [HarmonyPatch(typeof(ThrowableItem), "ServerThrow", new Type[] { typeof(float), typeof(float), typeof(Vector3), typeof(Vector3) })]
     public static class ServerThrowPatch
     {
         /// <summary>
@@ -35,9 +35,10 @@ namespace Mistaken.NotEnoughItems.Patches
         /// <param name="forceAmount">Force Amount.</param>
         /// <param name="upwardFactor">UpwardFactor.</param>
         /// <param name="torque">Torque.</param>
+        /// <param name="startVel">Start Velocity.</param>
         /// <returns>whether basegame code should get executed.</returns>
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-        public static bool Prefix(ThrowableItem __instance, float forceAmount, float upwardFactor, Vector3 torque)
+        public static bool Prefix(ThrowableItem __instance, float forceAmount, float upwardFactor, Vector3 torque, Vector3 startVel)
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
             if (!ThrowedItems.Contains(__instance))
@@ -64,7 +65,7 @@ namespace Mistaken.NotEnoughItems.Patches
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             Rigidbody rb;
             if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
-                __instance.PropelBody(rb, torque, forceAmount * 2.2f, upwardFactor / 1.3f);
+                __instance.PropelBody(rb, torque, startVel, forceAmount * 2.2f, upwardFactor / 1.3f);
 
             CustomItem item;
             if (MistakenCustomItems.IMPACT_GRENADE.TryGet(out item) && !(item is null))

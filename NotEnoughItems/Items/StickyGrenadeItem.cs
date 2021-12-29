@@ -53,7 +53,7 @@ namespace Mistaken.NotEnoughItems.Items
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             Rigidbody rb;
             if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
-                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), 50, 0.2f);
+                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), Vector3.zero, 50, 0.2f);
 
             thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
             thrownProjectile.ServerActivate();
