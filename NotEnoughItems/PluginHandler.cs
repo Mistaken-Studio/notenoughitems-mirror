@@ -7,6 +7,7 @@
 using System;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using HarmonyLib;
 using Mistaken.NotEnoughItems.Handlers;
 
 namespace Mistaken.NotEnoughItems
@@ -32,6 +33,8 @@ namespace Mistaken.NotEnoughItems
         public override void OnEnabled()
         {
             Instance = this;
+            harmony = new Harmony("mistaken.notenoughitems");
+            harmony.PatchAll();
 
             new GrenadeLauncherHandler(this);
             new ImpHandler(this);
@@ -47,11 +50,15 @@ namespace Mistaken.NotEnoughItems
         /// <inheritdoc/>
         public override void OnDisabled()
         {
+            harmony.UnpatchAll();
+
             API.Diagnostics.Module.OnDisable(this);
 
             base.OnDisabled();
         }
 
         internal static PluginHandler Instance { get; private set; }
+
+        private static Harmony harmony;
     }
 }

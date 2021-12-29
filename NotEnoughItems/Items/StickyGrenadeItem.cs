@@ -114,9 +114,9 @@ namespace Mistaken.NotEnoughItems.Items
         {
             if (ev.RequestType != ThrowRequest.BeginThrow)
             {
+                RLogger.Log("STICKY GRENADE", "THROW", $"Player {ev.Player.PlayerToString()} threw a {this.Name}");
                 Patches.ServerThrowPatch.ThrowedItems.Add(ev.Item.Base);
                 ev.Player.RemoveItem(ev.Item);
-                RLogger.Log("STICKY GRENADE", "THROW", $"Player {ev.Player.PlayerToString()} threw a {this.Name}");
             }
         }
 

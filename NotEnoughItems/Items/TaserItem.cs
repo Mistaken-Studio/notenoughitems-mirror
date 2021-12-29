@@ -12,14 +12,12 @@ using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
-using Exiled.Events.EventArgs;
 using InventorySystem.Items.Firearms;
 using MEC;
 using Mistaken.API;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
-using Mistaken.Events.EventArgs;
 using Mistaken.RoundLogger;
 using UnityEngine;
 
@@ -63,8 +61,27 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage = true)
         {
-            RLogger.Log("STICKY GRENADE", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
-            base.Give(player, displayMessage);
+            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
+            firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
+            player.AddItem(firearm);
+            RLogger.Log("TASER", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
+
+            this.TrackedSerials.Add(firearm.Serial);
+            if (displayMessage)
+                this.ShowPickedUpMessage(player);
+        }
+
+        /// <inheritdoc/>
+        public override void Give(Player player, Pickup pickup, bool displayMessage = true)
+        {
+            FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            player.AddItem(pickup);
+            firearm.Status = new FirearmStatus(firearm.Status.Ammo, firearm.Status.Flags, 75);
+            RLogger.Log("TASER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
+
+            this.TrackedSerials.Add(firearm.Info.Serial);
+            if (displayMessage)
+                this.ShowPickedUpMessage(player);
         }
 
         /// <inheritdoc/>
@@ -87,9 +104,10 @@ namespace Mistaken.NotEnoughItems.Items
                 this.cooldowns.Add(firearm.Serial, value);
             }
 
-            firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
             this.TrackedSerials.Add(firearm.Serial);
-            return firearm.Spawn(position);
+            var pickup = firearm.Spawn(position);
+            ((FirearmPickup)pickup.Base).Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
+            return pickup;
         }
 
         internal static readonly Vector3 Size = new Vector3(1f, 0.65f, 1f);
@@ -101,7 +119,7 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnReloading(ReloadingWeaponEventArgs ev)
+        protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
             ev.IsAllowed = false;
         }
