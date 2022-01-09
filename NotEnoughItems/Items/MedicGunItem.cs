@@ -148,13 +148,11 @@ namespace Mistaken.NotEnoughItems.Items
             if (!(ev.Target is null))
             {
                 var hpToHeal = Math.Min(ev.Target.MaxHealth - ev.Target.Health, PluginHandler.Instance.Config.HealAmount);
-                var ahpToHeal = (PluginHandler.Instance.Config.HealAmount - hpToHeal) * 2f;
+                var ahpToHeal = PluginHandler.Instance.Config.HealAmount - hpToHeal;
                 ev.Target.Health += hpToHeal;
-                if (ahpToHeal != 0)
-                    ((PlayerStatsSystem.AhpStat)ev.Target.ReferenceHub.playerStats.StatModules[1]).ServerAddProcess(ahpToHeal, ahpToHeal, ahpToHeal / 10f, 0.65f, 15f, false);
+                ev.Target.ArtificialHealth += ahpToHeal;
                 RLogger.Log("MEDIC GUN", "HEAL", $"Player {ev.Shooter.PlayerToString()} hit player {ev.Target.PlayerToString()} and regenerated {hpToHeal} hp and {ahpToHeal} ahp");
                 ev.CanHurt = false;
-                Hitmarker.SendHitmarker(ev.Shooter.Connection, 2f);
             }
         }
 

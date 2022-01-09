@@ -20,7 +20,7 @@ namespace Mistaken.NotEnoughItems.Patches
     /// <summary>
     /// Patch for adding ImpComponent to thrown grenades.
     /// </summary>
-    [HarmonyPatch(typeof(ThrowableItem), "ServerThrow", new Type[] { typeof(float), typeof(float), typeof(Vector3) })]
+    [HarmonyPatch(typeof(ThrowableItem), "ServerThrow", new Type[] { typeof(float), typeof(float), typeof(Vector3), typeof(Vector3) })]
     public static class ServerThrowPatch
     {
         /// <summary>
@@ -35,14 +35,17 @@ namespace Mistaken.NotEnoughItems.Patches
         /// <param name="forceAmount">Force Amount.</param>
         /// <param name="upwardFactor">UpwardFactor.</param>
         /// <param name="torque">Torque.</param>
+        /// <param name="startVel">Start Velocity.</param>
         /// <returns>whether basegame code should get executed.</returns>
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-        public static bool Prefix(ThrowableItem __instance, float forceAmount, float upwardFactor, Vector3 torque)
+        public static bool Prefix(ThrowableItem __instance, float forceAmount, float upwardFactor, Vector3 torque, Vector3 startVel)
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
             if (!ThrowedItems.Contains(__instance))
                 return true;
-            Respawning.GameplayTickets.Singleton.HandleItemTickets(__instance);
+
+            if (__instance.Owner.characterClassManager.CurRole.team == Team.CHI || __instance.Owner.characterClassManager.CurClass == RoleType.ClassD)
+                Respawning.GameplayTickets.Singleton.HandleItemTickets(__instance.OwnerInventory.CurInstance);
 
             ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(__instance.Projectile, __instance.Owner.PlayerCameraReference.position, __instance.Owner.PlayerCameraReference.rotation);
             InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
@@ -60,15 +63,22 @@ namespace Mistaken.NotEnoughItems.Patches
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
             ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
-            if (thrownProjectile.TryGetComponent<Rigidbody>(out var rb))
-                __instance.PropelBody(rb, torque, forceAmount * 2f, upwardFactor / 1.1f);
+            Rigidbody rb;
+            if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
+                __instance.PropelBody(rb, torque, startVel, forceAmount * 2.2f, upwardFactor / 1.3f);
 
-            Log.Debug(__instance.ItemSerial + " ; " + __instance.PickupDropModel.Info.Serial);
+            CustomItem item;
+            if (MistakenCustomItems.IMPACT_GRENADE.TryGet(out item) && !(item is null))
+            {
+                if (item.TrackedSerials.Contains(__instance.ItemSerial))
+                    thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
+            }
 
-            if (Items.ImpItem.Instance.TrackedSerials.Contains(__instance.ItemSerial))
-                thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
-            if (Items.StickyGrenadeItem.Instance.TrackedSerials.Contains(__instance.ItemSerial))
-                thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
+            if (MistakenCustomItems.STICKY_GRENADE.TryGet(out item) && !(item is null))
+            {
+                if (item.TrackedSerials.Contains(__instance.ItemSerial))
+                    thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
+            }
 
             thrownProjectile.ServerActivate();
 

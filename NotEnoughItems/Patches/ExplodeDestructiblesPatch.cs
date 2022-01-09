@@ -16,7 +16,7 @@ namespace Mistaken.NotEnoughItems.Patches
     /// <summary>
     /// Patch for changing damage done from explosion to players.
     /// </summary>
-    [HarmonyPatch(typeof(ExplosionGrenade), "ExplodeDestructible")]
+    [HarmonyPatch(typeof(ExplosionGrenade), "ExplodeDestructible", typeof(IDestructible))]
     public static class ExplodeDestructiblesPatch
     {
         /// <summary>
@@ -28,27 +28,29 @@ namespace Mistaken.NotEnoughItems.Patches
         private static bool Prefix(ExplosionGrenade __instance, IDestructible dest, Footprinting.Footprint attacker, Vector3 pos, ExplosionGrenade setts, ref bool __result)
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
-            if (!Grenades.Contains(__instance))
-                return true;
-
             if (Physics.Linecast(dest.CenterOfMass, pos, MicroHIDItem.WallMask))
             {
                 __result = false;
                 return false;
             }
 
+            if (!Grenades.Contains(__instance))
+                return true;
+
             Vector3 a = dest.CenterOfMass - pos;
             float magnitude = a.magnitude;
             float num = setts._playerDamageOverDistance.Evaluate(magnitude);
             ReferenceHub referenceHub;
             bool flag = ReferenceHub.TryGetHubNetID(dest.NetworkId, out referenceHub);
-            if (flag && referenceHub.characterClassManager.CurRole.team == Team.SCP)
+            if (flag && referenceHub.characterClassManager.CurRole.team == global::Team.SCP)
                 num *= setts._scpDamageMultiplier;
+
             Vector3 force = ((1f - (magnitude / setts._maxRadius)) * (a / magnitude) * setts._rigidbodyBaseForce) + (Vector3.up * setts._rigidbodyLiftForce);
-            if (num > 0f && dest.Damage(num, new PlayerStatsSystem.ExplosionDamageHandler(attacker, force, num, 15), dest.CenterOfMass) && flag)
+            if (num > 0f && dest.Damage(num, new PlayerStatsSystem.ExplosionDamageHandler(attacker, force, num, 25), dest.CenterOfMass) && flag)
             {
                 float num2 = setts._effectDurationOverDistance.Evaluate(magnitude);
                 bool flag2 = attacker.Hub == referenceHub;
+
                 if (num2 > 0f && (flag2 || HitboxIdentity.CheckFriendlyFire(attacker.Role, referenceHub.characterClassManager.CurClass, false)))
                 {
                     referenceHub.playerEffectsController.EnableEffect<CustomPlayerEffects.Burned>(num2 * setts._burnedDuration, true);
@@ -58,10 +60,11 @@ namespace Mistaken.NotEnoughItems.Patches
 
                 if (!flag2 && attacker.Hub != null)
                     Hitmarker.SendHitmarker(attacker.Hub, 1f);
-                referenceHub.inventory.connectionToClient.Send(
+
+                referenceHub.inventory.connectionToClient.Send<GunHitMessage>(
                     new GunHitMessage
                 {
-                    Weapon = ItemType.None,
+                    Weapon = global::ItemType.None,
                     Damage = (byte)Mathf.Clamp(num * 2.5f, 0f, 255f),
                     DamagePosition = pos,
                 }, 0);

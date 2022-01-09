@@ -53,7 +53,7 @@ namespace Mistaken.NotEnoughItems.Handlers
             while (toSpawn > 0)
             {
                 var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
-                var pickup = Items.ImpItem.Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
+                MistakenCustomGrenade.TrySpawn(MistakenCustomItems.IMPACT_GRENADE, chamber._spawnpoint.position + (Vector3.up / 10), out var pickup);
                 chamber._content.Add(pickup.Base);
                 toSpawn--;
             }

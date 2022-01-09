@@ -59,13 +59,6 @@ namespace Mistaken.NotEnoughItems.Items
         public override float Damage { get; set; } = 5;
 
         /// <inheritdoc/>
-        public override void Init()
-        {
-            base.Init();
-            Instance = this;
-        }
-
-        /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage = true)
         {
             Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
@@ -118,8 +111,6 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         internal static readonly Vector3 Size = new Vector3(1f, 0.65f, 1f);
-
-        internal static TaserItem Instance { get; private set; }
 
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
