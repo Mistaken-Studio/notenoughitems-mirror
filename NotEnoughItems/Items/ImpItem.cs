@@ -11,7 +11,9 @@ using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs;
+using InventorySystem.Items.ThrowableProjectiles;
 using MEC;
+using Mirror;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
@@ -25,6 +27,42 @@ namespace Mistaken.NotEnoughItems.Items
     /// </summary>
     public class ImpItem : MistakenCustomGrenade
     {
+        /// <summary>
+        /// Throws Impact Grenade.
+        /// </summary>
+        /// <param name="player">Throwing player.</param>
+        /// <param name="grenade">Grenade to be thrown.</param>
+        /// <returns>Thrown projectile.</returns>
+        public static ThrownProjectile Throw(Player player = null, Throwable grenade = null)
+        {
+            if (grenade is null)
+                grenade = new Throwable(ItemType.GrenadeHE, player);
+            Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
+            ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, grenade.Base.Owner.PlayerCameraReference.position, grenade.Base.Owner.PlayerCameraReference.rotation);
+            InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
+            {
+                ItemId = grenade.Type,
+                Locked = !grenade.Base._repickupable,
+                Serial = grenade.Serial,
+                Weight = 0.01f,
+                Position = thrownProjectile.transform.position,
+                Rotation = new LowPrecisionQuaternion(thrownProjectile.transform.rotation),
+            };
+
+            thrownProjectile.NetworkInfo = pickupSyncInfo;
+            thrownProjectile.PreviousOwner = new Footprinting.Footprint(grenade.Base.Owner);
+            NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
+            Patches.ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
+            thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
+            Rigidbody rb;
+            if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
+                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), 35, 0.18f);
+
+            thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
+            thrownProjectile.ServerActivate();
+            return thrownProjectile;
+        }
+
         /// <inheritdoc/>
         public override MistakenCustomItems CustomItem => MistakenCustomItems.IMPACT_GRENADE;
 
@@ -48,6 +86,13 @@ namespace Mistaken.NotEnoughItems.Items
 
         /// <inheritdoc/>
         public override float FuseTime { get; set; } = 3;
+
+        /// <inheritdoc/>
+        public override void Init()
+        {
+            base.Init();
+            Instance = this;
+        }
 
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage)
@@ -74,6 +119,8 @@ namespace Mistaken.NotEnoughItems.Items
             this.TrackedSerials.Add(grenade.Serial);
             return grenade.Spawn(position);
         }
+
+        internal static ImpItem Instance { get; private set; }
 
         /// <inheritdoc/>
         protected override void ShowPickedUpMessage(Player player)
