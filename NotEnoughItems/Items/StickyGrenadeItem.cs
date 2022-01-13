@@ -73,6 +73,9 @@ namespace Mistaken.NotEnoughItems.Items
         public override string Description { get; set; } = "A Sticky Grenade";
 
         /// <inheritdoc/>
+        public override string DisplayName => "Sticky Grenade";
+
+        /// <inheritdoc/>
         public override float Weight { get; set; } = 0.01f;
 
         /// <inheritdoc/>

@@ -76,6 +76,9 @@ namespace Mistaken.NotEnoughItems.Items
         public override string Description { get; set; } = "Grenade that explodes on impact";
 
         /// <inheritdoc/>
+        public override string DisplayName => "Impact Grenade";
+
+        /// <inheritdoc/>
         public override float Weight { get; set; } = 0.01f;
 
         /// <inheritdoc/>
@@ -151,19 +154,6 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.ImpHandler.Instance.RunCoroutine(this.UpdateInterface(player));
-        }
-
-        private IEnumerator<float> UpdateInterface(Player player)
-        {
-            yield return Timing.WaitForSeconds(0.1f);
-            while (this.Check(player.CurrentItem))
-            {
-                player.SetGUI("impact", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.ItemHoldingMessage, PluginHandler.Instance.Translation.ImpactGrenade));
-                yield return Timing.WaitForSeconds(1);
-            }
-
-            player.SetGUI("impact", PseudoGUIPosition.BOTTOM, null);
         }
     }
 }
