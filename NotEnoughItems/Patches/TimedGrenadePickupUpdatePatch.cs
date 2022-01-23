@@ -15,15 +15,11 @@ using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Patches
 {
-    /// <summary>
-    /// Patch for getting impact grenades chained.
-    /// </summary>
-    [HarmonyPatch(typeof(TimedGrenadePickup), "Update")]
-    public class TimedGrenadePickupUpdatePatch
-    {
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    [HarmonyPatch(typeof(TimedGrenadePickup), "Update")]
+    internal static class TimedGrenadePickupUpdatePatch
+    {
         private static bool Prefix(TimedGrenadePickup __instance)
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
             if (!__instance._replaceNextFrame)
             {

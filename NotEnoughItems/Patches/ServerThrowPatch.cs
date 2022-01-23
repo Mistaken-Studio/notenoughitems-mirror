@@ -13,28 +13,13 @@ using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Patches
 {
-    /// <summary>
-    /// Patch for adding ImpComponent to thrown grenades.
-    /// </summary>
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
     [HarmonyPatch(typeof(ThrowableItem), "ServerThrow", new Type[] { typeof(float), typeof(float), typeof(Vector3), typeof(Vector3) })]
-    public static class ServerThrowPatch
+    internal static class ServerThrowPatch
     {
-        /// <summary>
-        /// Gets or sets players who threw an impact grenade.
-        /// </summary>
         public static HashSet<ThrowableItem> ThrowedItems { get; set; } = new HashSet<ThrowableItem>();
 
-        /// <summary>
-        /// Patch for adding ImpComponent to thrown grenades.
-        /// </summary>
-        /// <param name="__instance">Instance.</param>
-        /// <param name="forceAmount">Force Amount.</param>
-        /// <param name="upwardFactor">UpwardFactor.</param>
-        /// <param name="torque">Torque.</param>
-        /// <returns>whether basegame code should get executed.</returns>
-#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
         public static bool Prefix(ThrowableItem __instance, float forceAmount, float upwardFactor, Vector3 torque, Vector3 startVel)
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
             if (!ThrowedItems.Contains(__instance))
                 return true;

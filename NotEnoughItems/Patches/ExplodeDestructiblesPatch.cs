@@ -13,20 +13,13 @@ using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Patches
 {
-    /// <summary>
-    /// Patch for changing damage done from explosion to players.
-    /// </summary>
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
     [HarmonyPatch(typeof(ExplosionGrenade), "ExplodeDestructible")]
-    public static class ExplodeDestructiblesPatch
+    internal static class ExplodeDestructiblesPatch
     {
-        /// <summary>
-        /// Gets or sets HashSet of impact grenades.
-        /// </summary>
         public static HashSet<ThrownProjectile> Grenades { get; set; } = new HashSet<ThrownProjectile>();
 
-#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
         private static bool Prefix(ExplosionGrenade __instance, IDestructible dest, Footprinting.Footprint attacker, Vector3 pos, ExplosionGrenade setts, ref bool __result)
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
             if (!Grenades.Contains(__instance))
                 return true;
