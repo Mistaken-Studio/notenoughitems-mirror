@@ -4,15 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs;
 using InventorySystem.Items.ThrowableProjectiles;
-using MEC;
 using Mirror;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
@@ -56,7 +53,7 @@ namespace Mistaken.NotEnoughItems.Items
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             Rigidbody rb;
             if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
-                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), 35, 0.18f);
+                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), Vector3.zero, 35, 0.18f);
 
             thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
             thrownProjectile.ServerActivate();
@@ -135,6 +132,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnThrowing(ThrowingItemEventArgs ev)
         {
+            base.OnThrowing(ev);
             if (ev.RequestType != ThrowRequest.BeginThrow)
             {
                 RLogger.Log("IMPACT GRENADE", "THROW", $"{ev.Player.PlayerToString()} threw an {this.Name}");
@@ -146,6 +144,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnExploding(ExplodingGrenadeEventArgs ev)
         {
+            base.OnExploding(ev);
             RLogger.Log("IMPACT GRENADE", "EXPLODED", $"Impact grenade exploded");
             foreach (var player in ev.TargetsToAffect)
                 RLogger.Log("IMPACT GRENADE", "HURT", $"{player.PlayerToString()} was hurt by an {this.Name}");

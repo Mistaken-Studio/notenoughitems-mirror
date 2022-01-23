@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
@@ -13,7 +12,6 @@ using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
-using MEC;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
@@ -117,6 +115,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
+            base.OnReloading(ev);
             if (ev.Firearm.Ammo >= this.ClipSize)
             {
                 ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.FullMagazineError, 3);
@@ -142,12 +141,14 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnUnloadingWeapon(Exiled.Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
+            base.OnUnloadingWeapon(ev);
             ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
         protected override void OnShot(Exiled.Events.EventArgs.ShotEventArgs ev)
         {
+            base.OnShot(ev);
             if (!(ev.Target is null))
             {
                 var hpToHeal = Math.Min(ev.Target.MaxHealth - ev.Target.Health, PluginHandler.Instance.Config.HealAmount);

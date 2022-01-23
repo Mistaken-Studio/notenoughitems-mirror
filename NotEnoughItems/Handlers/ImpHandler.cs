@@ -6,7 +6,6 @@
 
 using System.Linq;
 using Exiled.API.Interfaces;
-using Mistaken.API.CustomItems;
 using Mistaken.API.Diagnostics;
 using UnityEngine;
 

@@ -6,15 +6,12 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
-using InventorySystem.Items.ThrowableProjectiles;
-using MEC;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
@@ -114,6 +111,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
+            base.OnReloading(ev);
             ev.IsAllowed = false;
             if (!this.grenadeQueue.ContainsKey(ev.Firearm.Serial))
                 Log.Error("[Grenade Launcher] Somehow key not found");
@@ -146,6 +144,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnShooting(Exiled.Events.EventArgs.ShootingEventArgs ev)
         {
+            base.OnShooting(ev);
             ev.IsAllowed = false;
             var serial = ev.Shooter.CurrentItem.Serial;
             if (!this.grenadeQueue.ContainsKey(serial))
@@ -172,7 +171,7 @@ namespace Mistaken.NotEnoughItems.Items
             {
                 toThrow.Base.Owner = ev.Shooter.ReferenceHub;
                 Patches.ServerThrowPatch.ThrowedItems.Add(toThrow.Base);
-                toThrow.Base.ServerThrow(8.5f, 0.2f, new Vector3(10, 10, 0));
+                toThrow.Base.ServerThrow(8.5f, 0.2f, new Vector3(10, 10, 0), ev.Shooter.ReferenceHub.playerMovementSync.PlayerVelocity);
             }
 
             RLogger.Log("GRENADE LAUNCHER", "FIRE", $"Player {ev.Shooter.PlayerToString()} fired {name}");

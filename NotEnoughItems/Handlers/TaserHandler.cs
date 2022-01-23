@@ -7,10 +7,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Features;
-using Exiled.API.Features.Items;
 using Exiled.API.Interfaces;
 using Mistaken.API;
-using Mistaken.API.CustomItems;
 using Mistaken.API.Diagnostics;
 using Mistaken.API.Extensions;
 using UnityEngine;

@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Exiled.API.Features;
 using Exiled.CustomItems.API.Features;
 using HarmonyLib;
 using InventorySystem;

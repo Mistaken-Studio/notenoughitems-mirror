@@ -130,12 +130,14 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
+            base.OnReloading(ev);
             ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
         protected override void OnUnloadingWeapon(Exiled.Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
+            base.OnUnloadingWeapon(ev);
             ev.IsAllowed = false;
         }
 
@@ -149,6 +151,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnShooting(Exiled.Events.EventArgs.ShootingEventArgs ev)
         {
+            base.OnShooting(ev);
             if (!this.cooldowns.TryGetValue(ev.Shooter.CurrentItem.Serial, out DateTime time))
                 this.cooldowns.Add(ev.Shooter.CurrentItem.Serial, DateTime.Now);
             if (DateTime.Now < time)
@@ -222,6 +225,14 @@ namespace Mistaken.NotEnoughItems.Items
                     }
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        protected override void OnHurting(Exiled.Events.EventArgs.HurtingEventArgs ev)
+        {
+            base.OnHurting(ev);
+            if (ev.Handler.Type == DamageType.Firearm)
+                ev.IsAllowed = false;
         }
 
         private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();

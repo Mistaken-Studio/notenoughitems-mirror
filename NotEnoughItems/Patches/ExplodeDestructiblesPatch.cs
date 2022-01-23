@@ -58,13 +58,7 @@ namespace Mistaken.NotEnoughItems.Patches
 
                 if (!flag2 && attacker.Hub != null)
                     Hitmarker.SendHitmarker(attacker.Hub, 1f);
-                referenceHub.inventory.connectionToClient.Send(
-                    new GunHitMessage
-                {
-                    Weapon = ItemType.None,
-                    Damage = (byte)Mathf.Clamp(num * 2.5f, 0f, 255f),
-                    DamagePosition = pos,
-                }, 0);
+                referenceHub.inventory.connectionToClient.Send<GunHitMessage>(new GunHitMessage(false, num, pos), 0);
             }
 
             __result = true;
