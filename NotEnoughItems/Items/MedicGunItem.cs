@@ -41,6 +41,9 @@ namespace Mistaken.NotEnoughItems.Items
         public override string Description { get; set; } = "Medic Gun";
 
         /// <inheritdoc/>
+        public override string DisplayName => "Medic Gun";
+
+        /// <inheritdoc/>
         public override float Weight { get; set; } = 0.75f;
 
         /// <inheritdoc/>
@@ -161,19 +164,6 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.MedicGunHandler.Instance.RunCoroutine(this.UpdateInterface(player));
-        }
-
-        private IEnumerator<float> UpdateInterface(Player player)
-        {
-            yield return Timing.WaitForSeconds(0.1f);
-            while (this.Check(player.CurrentItem))
-            {
-                player.SetGUI("ci_medic_gun_hold", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.ItemHoldingMessage, PluginHandler.Instance.Translation.MedicGun));
-                yield return Timing.WaitForSeconds(1f);
-            }
-
-            player.SetGUI("ci_medic_gun_hold", PseudoGUIPosition.BOTTOM, null);
         }
     }
 }

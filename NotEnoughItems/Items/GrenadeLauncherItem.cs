@@ -42,6 +42,9 @@ namespace Mistaken.NotEnoughItems.Items
         public override string Description { get; set; } = "Sticky Grenade Launcher";
 
         /// <inheritdoc/>
+        public override string DisplayName => "Grenade Launcher";
+
+        /// <inheritdoc/>
         public override float Weight { get; set; } = 0.7f;
 
         /// <inheritdoc/>
@@ -187,21 +190,8 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.GrenadeLauncherHandler.Instance.RunCoroutine(this.UpdateInterface(player));
         }
 
         private readonly Dictionary<ushort, List<Throwable>> grenadeQueue = new Dictionary<ushort, List<Throwable>>();
-
-        private IEnumerator<float> UpdateInterface(Player player)
-        {
-            yield return Timing.WaitForSeconds(0.1f);
-            while (this.Check(player.CurrentItem))
-            {
-                player.SetGUI("grenadeLauncher", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.ItemHoldingMessage, PluginHandler.Instance.Translation.GrenadeLauncher));
-                yield return Timing.WaitForSeconds(1);
-            }
-
-            player.SetGUI("grenadeLauncher", PseudoGUIPosition.BOTTOM, null);
-        }
     }
 }
