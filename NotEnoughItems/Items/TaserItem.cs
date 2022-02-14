@@ -227,14 +227,6 @@ namespace Mistaken.NotEnoughItems.Items
             }
         }
 
-        /// <inheritdoc/>
-        protected override void OnHurting(Exiled.Events.EventArgs.HurtingEventArgs ev)
-        {
-            base.OnHurting(ev);
-            if (ev.Handler.Type == DamageType.Firearm)
-                ev.IsAllowed = false;
-        }
-
         private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
 
         private IEnumerator<float> UpdateInterface(Player player)

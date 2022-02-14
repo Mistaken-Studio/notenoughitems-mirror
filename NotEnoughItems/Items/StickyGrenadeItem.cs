@@ -27,15 +27,18 @@ namespace Mistaken.NotEnoughItems.Items
         /// <summary>
         /// Throws Sticky Grenade.
         /// </summary>
-        /// <param name="player">Throwing player.</param>
+        /// <param name="ownerHub">Throwing player's hub.</param>
         /// <param name="grenade">Grenade to be thrown.</param>
         /// <returns>Thrown projectile.</returns>
-        public static ThrownProjectile Throw(Player player = null, Throwable grenade = null)
+        public static ThrownProjectile Throw(ReferenceHub ownerHub, Throwable grenade = null)
         {
+            if (ownerHub is null)
+                ownerHub = Server.Host.ReferenceHub;
             if (grenade is null)
-                grenade = new Throwable(ItemType.GrenadeHE, player);
+                grenade = new Throwable(ItemType.GrenadeHE);
+            grenade.Base.Owner = ownerHub;
             Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
-            ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, grenade.Base.Owner.PlayerCameraReference.position, grenade.Base.Owner.PlayerCameraReference.rotation);
+            ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
             InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
             {
                 ItemId = grenade.Type,
@@ -47,13 +50,13 @@ namespace Mistaken.NotEnoughItems.Items
             };
 
             thrownProjectile.NetworkInfo = pickupSyncInfo;
-            thrownProjectile.PreviousOwner = new Footprinting.Footprint(grenade.Base.Owner);
+            thrownProjectile.PreviousOwner = new Footprinting.Footprint(ownerHub);
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
             Patches.ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             Rigidbody rb;
             if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
-                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), Vector3.zero, 30, 0.18f);
+                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), ownerHub.playerMovementSync.PlayerVelocity, 35, 0.18f);
 
             thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
             thrownProjectile.ServerActivate();

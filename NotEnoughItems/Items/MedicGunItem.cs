@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
@@ -123,6 +124,12 @@ namespace Mistaken.NotEnoughItems.Items
                 return;
             }
 
+            if (this.cooldowns.TryGetValue(ev.Firearm.Serial, out var date) && date > DateTime.Now)
+            {
+                ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {(date - DateTime.Now).TotalSeconds} seconds", 3);
+                return;
+            }
+
             if (!ev.Player.Items.Any(i => i.Type == ItemType.Adrenaline))
             {
                 ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.NoAmmoError, PluginHandler.Instance.Translation.MedicGunAmmo), 3);
@@ -130,6 +137,9 @@ namespace Mistaken.NotEnoughItems.Items
                 return;
             }
 
+            if (!this.cooldowns.ContainsKey(ev.Firearm.Serial))
+                this.cooldowns.Add(ev.Firearm.Serial, DateTime.Now);
+            this.cooldowns[ev.Firearm.Serial] = DateTime.Now.AddSeconds(5);
             RLogger.Log("MEDIC GUN", "RELOAD", $"Player {ev.Player.PlayerToString()} reloaded {this.Name}");
             ev.Player.RemoveItem(ev.Player.Items.First(i => i.Type == ItemType.Adrenaline));
             ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.ReloadedInfo, 3);
@@ -166,5 +176,7 @@ namespace Mistaken.NotEnoughItems.Items
         protected override void ShowSelectedMessage(Player player)
         {
         }
+
+        private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
     }
 }

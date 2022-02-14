@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="Components\ImpComponent.cs" />
     <Compile Include="Components\StickyComponent.cs" />
+    <Compile Include="CustomGrenadeTypes.cs" />
     <Compile Include="Handlers\GrenadeLauncherHandler.cs" />
     <Compile Include="Handlers\ImpHandler.cs" />
     <Compile Include="Handlers\MedicGunHandler.cs" />

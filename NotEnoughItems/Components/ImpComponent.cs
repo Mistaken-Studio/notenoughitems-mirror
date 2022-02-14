@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using Exiled.API.Features;
 using InventorySystem.Items.ThrowableProjectiles;
 using UnityEngine;
 
@@ -31,7 +32,9 @@ namespace Mistaken.NotEnoughItems.Components
             {
                 if (ReferenceHub.TryGetHubNetID(component.NetworkId, out var referenceHub))
                 {
-                    if (this.grenade.PreviousOwner.Hub != referenceHub)
+                    Log.Debug("Previous owner's netid: " + this.grenade.PreviousOwner);
+                    Log.Debug("component's netid: " + component.NetworkId);
+                    if (this.grenade.PreviousOwner.PlayerId == referenceHub?.playerId)
                         return;
                 }
             }
