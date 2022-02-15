@@ -175,12 +175,12 @@ namespace Mistaken.NotEnoughItems.Items
 
             string name = "GrenadeHE";
             var toThrow = this.GetGrenadeFromType(this.grenadeQueue[serial][0]);
-            if (this.grenadeQueue[serial][0] == CustomGrenadeTypes.Sticky)
+            if (this.grenadeQueue[serial][0] == CustomGrenadeTypes.STICKY)
             {
                 StickyGrenadeItem.Throw(ev.Shooter.ReferenceHub, toThrow);
                 name = StickyGrenadeItem.Instance.Name;
             }
-            else if (this.grenadeQueue[serial][0] == CustomGrenadeTypes.Impact)
+            else if (this.grenadeQueue[serial][0] == CustomGrenadeTypes.IMPACT)
             {
                 ImpItem.Throw(ev.Shooter.ReferenceHub, toThrow);
                 name = ImpItem.Instance.Name;
@@ -227,20 +227,20 @@ namespace Mistaken.NotEnoughItems.Items
             ExplosiveGrenade grenade = null;
             switch (type)
             {
-                case CustomGrenadeTypes.Frag:
+                case CustomGrenadeTypes.FRAG:
                     {
                         grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
                         return grenade;
                     }
 
-                case CustomGrenadeTypes.Sticky:
+                case CustomGrenadeTypes.STICKY:
                     {
                         grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
                         StickyGrenadeItem.Instance.TrackedSerials.Add(grenade.Serial);
                         return grenade;
                     }
 
-                case CustomGrenadeTypes.Impact:
+                case CustomGrenadeTypes.IMPACT:
                     {
                         grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
                         ImpItem.Instance.TrackedSerials.Add(grenade.Serial);
@@ -255,13 +255,13 @@ namespace Mistaken.NotEnoughItems.Items
         private CustomGrenadeTypes GetTypeFromGrenade(Item item)
         {
             if (!(item is Throwable) && item.Type != ItemType.GrenadeHE)
-                return CustomGrenadeTypes.None;
+                return CustomGrenadeTypes.NONE;
             if (StickyGrenadeItem.Instance.Check(item))
-                return CustomGrenadeTypes.Sticky;
+                return CustomGrenadeTypes.STICKY;
             else if (ImpItem.Instance.Check(item))
-                return CustomGrenadeTypes.Impact;
+                return CustomGrenadeTypes.IMPACT;
             else
-                return CustomGrenadeTypes.Frag;
+                return CustomGrenadeTypes.FRAG;
         }
     }
 }

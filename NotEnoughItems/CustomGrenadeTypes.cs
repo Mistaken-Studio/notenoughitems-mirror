@@ -8,9 +8,9 @@ namespace Mistaken.NotEnoughItems
 {
     internal enum CustomGrenadeTypes
     {
-        None = -1,
-        Frag,
-        Sticky,
-        Impact,
+        NONE = -1,
+        FRAG,
+        STICKY,
+        IMPACT,
     }
 }
