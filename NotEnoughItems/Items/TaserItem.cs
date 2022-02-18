@@ -152,6 +152,7 @@ namespace Mistaken.NotEnoughItems.Items
         protected override void OnShooting(Exiled.Events.EventArgs.ShootingEventArgs ev)
         {
             base.OnShooting(ev);
+            this.isShotAllowed = true;
             if (!this.cooldowns.TryGetValue(ev.Shooter.CurrentItem.Serial, out DateTime time))
                 this.cooldowns.Add(ev.Shooter.CurrentItem.Serial, DateTime.Now);
             if (DateTime.Now < time)
@@ -163,7 +164,6 @@ namespace Mistaken.NotEnoughItems.Items
             }
             else
             {
-                this.isShotAllowed = true;
                 (ev.Shooter.CurrentItem as Exiled.API.Features.Items.Firearm).Ammo += 1;
                 this.cooldowns[ev.Shooter.CurrentItem.Serial] = DateTime.Now.AddSeconds(PluginHandler.Instance.Config.HitCooldown);
                 Player targetPlayer = (RealPlayers.List.Where(x => x.NetworkIdentity.netId == ev.TargetNetId).Count() > 0) ? RealPlayers.List.First(x => x.NetworkIdentity.netId == ev.TargetNetId) : null;

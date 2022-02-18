@@ -160,6 +160,7 @@ namespace Mistaken.NotEnoughItems.Items
         {
             base.OnShooting(ev);
             ev.IsAllowed = false;
+            this.isShotAllowed = true;
             var serial = ev.Shooter.CurrentItem.Serial;
             if (!this.grenadeQueue.ContainsKey(serial))
             {

@@ -117,10 +117,10 @@ namespace Mistaken.NotEnoughItems.Items
         protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
             base.OnReloading(ev);
+            ev.IsAllowed = false;
             if (ev.Firearm.Ammo >= this.ClipSize)
             {
                 ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.FullMagazineError, 3);
-                ev.IsAllowed = false;
                 return;
             }
 
@@ -133,7 +133,6 @@ namespace Mistaken.NotEnoughItems.Items
             if (!ev.Player.Items.Any(i => i.Type == ItemType.Adrenaline))
             {
                 ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.NoAmmoError, PluginHandler.Instance.Translation.MedicGunAmmo), 3);
-                ev.IsAllowed = false;
                 return;
             }
 
