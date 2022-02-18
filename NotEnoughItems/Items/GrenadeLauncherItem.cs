@@ -170,6 +170,7 @@ namespace Mistaken.NotEnoughItems.Items
             if (this.grenadeQueue[serial].Count == 0)
             {
                 ev.Shooter.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.EmptyMagazineError, 3);
+                this.isShotAllowed = false;
                 return;
             }
 
@@ -205,6 +206,13 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
+        protected override void OnPlayingGunAudio(PlayingGunAudioEventArgs ev)
+        {
+            base.OnPlayingGunAudio(ev);
+            ev.IsAllowed = this.isShotAllowed;
+        }
+
+        /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
         }
@@ -212,6 +220,8 @@ namespace Mistaken.NotEnoughItems.Items
         private readonly Dictionary<ushort, List<CustomGrenadeTypes>> grenadeQueue = new Dictionary<ushort, List<CustomGrenadeTypes>>();
 
         private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
+
+        private bool isShotAllowed = true;
 
         private List<CustomGrenadeTypes> AddRandomGrenades()
         {

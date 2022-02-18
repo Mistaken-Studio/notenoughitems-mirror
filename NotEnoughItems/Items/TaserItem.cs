@@ -156,12 +156,14 @@ namespace Mistaken.NotEnoughItems.Items
                 this.cooldowns.Add(ev.Shooter.CurrentItem.Serial, DateTime.Now);
             if (DateTime.Now < time)
             {
+                this.isShotAllowed = false;
                 ev.Shooter.SetGUI("taserammo", PseudoGUIPosition.TOP, PluginHandler.Instance.Translation.TaserNoAmmo, 2);
                 ev.IsAllowed = false;
                 return;
             }
             else
             {
+                this.isShotAllowed = true;
                 (ev.Shooter.CurrentItem as Exiled.API.Features.Items.Firearm).Ammo += 1;
                 this.cooldowns[ev.Shooter.CurrentItem.Serial] = DateTime.Now.AddSeconds(PluginHandler.Instance.Config.HitCooldown);
                 Player targetPlayer = (RealPlayers.List.Where(x => x.NetworkIdentity.netId == ev.TargetNetId).Count() > 0) ? RealPlayers.List.First(x => x.NetworkIdentity.netId == ev.TargetNetId) : null;
@@ -227,7 +229,16 @@ namespace Mistaken.NotEnoughItems.Items
             }
         }
 
+        /// <inheritdoc/>
+        protected override void OnPlayingGunAudio(PlayingGunAudioEventArgs ev)
+        {
+            base.OnPlayingGunAudio(ev);
+            ev.IsAllowed = this.isShotAllowed;
+        }
+
         private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
+
+        private bool isShotAllowed = true;
 
         private IEnumerator<float> UpdateInterface(Player player)
         {
