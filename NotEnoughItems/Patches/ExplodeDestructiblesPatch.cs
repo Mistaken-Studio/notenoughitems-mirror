@@ -19,9 +19,9 @@ namespace Mistaken.NotEnoughItems.Patches
     {
         public static HashSet<ThrownProjectile> Grenades { get; set; } = new HashSet<ThrownProjectile>();
 
-        private static bool Prefix(ExplosionGrenade __instance, IDestructible dest, Footprinting.Footprint attacker, Vector3 pos, ExplosionGrenade setts, ref bool __result)
+        private static bool Prefix(IDestructible dest, Footprinting.Footprint attacker, Vector3 pos, ExplosionGrenade setts, ref bool __result)
         {
-            if (!Grenades.Contains(__instance))
+            if (!Grenades.Contains(setts))
                 return true;
 
             if (Physics.Linecast(dest.CenterOfMass, pos, MicroHIDItem.WallMask))
@@ -38,7 +38,8 @@ namespace Mistaken.NotEnoughItems.Patches
             if (flag && referenceHub.characterClassManager.CurRole.team == Team.SCP)
                 num *= setts._scpDamageMultiplier;
             Vector3 force = ((1f - (magnitude / setts._maxRadius)) * (a / magnitude) * setts._rigidbodyBaseForce) + (Vector3.up * setts._rigidbodyLiftForce);
-            if (num > 0f && dest.Damage(num, new PlayerStatsSystem.ExplosionDamageHandler(attacker, force, num, 15), dest.CenterOfMass) && flag)
+            num = num / 3.2f;
+            if (num > 0f && dest.Damage(num, new PlayerStatsSystem.ExplosionDamageHandler(attacker, force, num, 50), dest.CenterOfMass) && flag)
             {
                 float num2 = setts._effectDurationOverDistance.Evaluate(magnitude);
                 bool flag2 = attacker.Hub == referenceHub;

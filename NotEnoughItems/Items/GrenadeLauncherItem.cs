@@ -216,6 +216,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
+            Handlers.GrenadeLauncherHandler.Instance.RunCoroutine(this.UpdateInterface(player));
         }
 
         private readonly Dictionary<ushort, List<CustomGrenadeTypes>> grenadeQueue = new Dictionary<ushort, List<CustomGrenadeTypes>>();
@@ -224,11 +225,42 @@ namespace Mistaken.NotEnoughItems.Items
 
         private bool isShotAllowed = true;
 
+        private IEnumerator<float> UpdateInterface(Player player)
+        {
+            yield return MEC.Timing.WaitForSeconds(0.1f);
+            while (this.Check(player.CurrentItem))
+            {
+                var serial = player.CurrentItem.Serial;
+                var type = this.grenadeQueue[serial].FirstOrDefault();
+                string grenadeType;
+                switch (type)
+                {
+                    case CustomGrenadeTypes.FRAG:
+                        grenadeType = "HE Grenade";
+                        break;
+                    case CustomGrenadeTypes.STICKY:
+                        grenadeType = "Sticky Grenade";
+                        break;
+                    case CustomGrenadeTypes.IMPACT:
+                        grenadeType = "Impact Grenade";
+                        break;
+                    default:
+                        grenadeType = "None";
+                        break;
+                }
+
+                player.SetGUI("grenade_launcher_ammo", PseudoGUIPosition.BOTTOM, $"Current grenade type: {grenadeType}");
+                yield return MEC.Timing.WaitForSeconds(1f);
+            }
+
+            player.SetGUI("grenade_launcher_ammo", PseudoGUIPosition.BOTTOM, null);
+        }
+
         private List<CustomGrenadeTypes> AddRandomGrenades()
         {
             List<CustomGrenadeTypes> tor = new List<CustomGrenadeTypes>();
             while (tor.Count != 4)
-                tor.Add((CustomGrenadeTypes)UnityEngine.Random.Range(0, 3));
+                tor.Add((CustomGrenadeTypes)UnityEngine.Random.Range(1, 4));
 
             return tor;
         }

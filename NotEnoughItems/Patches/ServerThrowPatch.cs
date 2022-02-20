@@ -46,7 +46,7 @@ namespace Mistaken.NotEnoughItems.Patches
 
             if (Items.ImpItem.Instance.TrackedSerials.Contains(__instance.ItemSerial))
                 thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
-            if (Items.StickyGrenadeItem.Instance.TrackedSerials.Contains(__instance.ItemSerial))
+            else if (Items.StickyGrenadeItem.Instance.TrackedSerials.Contains(__instance.ItemSerial))
                 thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
 
             thrownProjectile.ServerActivate();
