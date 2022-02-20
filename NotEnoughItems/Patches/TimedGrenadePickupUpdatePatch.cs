@@ -57,7 +57,7 @@ namespace Mistaken.NotEnoughItems.Patches
             {
                 if (item.TrackedSerials.Contains(__instance.Info.Serial))
                 {
-                    ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
+                    ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
                     thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
                 }
             }
@@ -66,7 +66,7 @@ namespace Mistaken.NotEnoughItems.Patches
             {
                 if (item.TrackedSerials.Contains(__instance.Info.Serial))
                 {
-                    ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
+                    ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
                     thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
                 }
             }

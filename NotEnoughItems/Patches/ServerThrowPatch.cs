@@ -39,7 +39,7 @@ namespace Mistaken.NotEnoughItems.Patches
             thrownProjectile.NetworkInfo = pickupSyncInfo;
             thrownProjectile.PreviousOwner = new Footprinting.Footprint(__instance.Owner);
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
-            ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
+            ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             if (thrownProjectile.TryGetComponent<Rigidbody>(out var rb))
                 __instance.PropelBody(rb, torque, startVel, forceAmount * 2f, upwardFactor / 1.1f);

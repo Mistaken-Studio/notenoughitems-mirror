@@ -52,7 +52,7 @@ namespace Mistaken.NotEnoughItems.Items
             thrownProjectile.NetworkInfo = pickupSyncInfo;
             thrownProjectile.PreviousOwner = new Footprinting.Footprint(ownerHub);
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
-            Patches.ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile);
+            Patches.ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
             thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
             Rigidbody rb;
             if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))

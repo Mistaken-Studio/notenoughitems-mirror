@@ -17,11 +17,11 @@ namespace Mistaken.NotEnoughItems.Patches
     [HarmonyPatch(typeof(ExplosionGrenade), "ExplodeDestructible")]
     internal static class ExplodeDestructiblesPatch
     {
-        public static HashSet<ThrownProjectile> Grenades { get; set; } = new HashSet<ThrownProjectile>();
+        public static HashSet<uint> Grenades { get; set; } = new HashSet<uint>();
 
         private static bool Prefix(IDestructible dest, Footprinting.Footprint attacker, Vector3 pos, ExplosionGrenade setts, ref bool __result)
         {
-            if (!Grenades.Contains(setts))
+            if (!Grenades.Contains(setts.netId))
                 return true;
 
             if (Physics.Linecast(dest.CenterOfMass, pos, MicroHIDItem.WallMask))
