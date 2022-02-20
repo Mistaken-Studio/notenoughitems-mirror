@@ -33,7 +33,7 @@ namespace Mistaken.NotEnoughItems
         public override void OnEnabled()
         {
             Instance = this;
-            harmony = new Harmony("mistaken.notenoughitems");
+            harmony = new Harmony("mistaken.notenoughitems.patch");
             harmony.PatchAll();
 
             new GrenadeLauncherHandler(this);

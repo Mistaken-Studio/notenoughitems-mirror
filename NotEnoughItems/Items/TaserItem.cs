@@ -59,6 +59,13 @@ namespace Mistaken.NotEnoughItems.Items
         public override float Damage { get; set; } = 5;
 
         /// <inheritdoc/>
+        public override void Init()
+        {
+            base.Init();
+            Instance = this;
+        }
+
+        /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage = true)
         {
             Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
@@ -112,6 +119,8 @@ namespace Mistaken.NotEnoughItems.Items
 
         internal static readonly Vector3 Size = new Vector3(1f, 0.65f, 1f);
 
+        internal static TaserItem Instance { get; private set; }
+
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
@@ -121,12 +130,14 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
+            base.OnReloading(ev);
             ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
         protected override void OnUnloadingWeapon(Exiled.Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
+            base.OnUnloadingWeapon(ev);
             ev.IsAllowed = false;
         }
 
@@ -140,10 +151,13 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnShooting(Exiled.Events.EventArgs.ShootingEventArgs ev)
         {
+            base.OnShooting(ev);
+            this.isShotAllowed = true;
             if (!this.cooldowns.TryGetValue(ev.Shooter.CurrentItem.Serial, out DateTime time))
                 this.cooldowns.Add(ev.Shooter.CurrentItem.Serial, DateTime.Now);
             if (DateTime.Now < time)
             {
+                this.isShotAllowed = false;
                 ev.Shooter.SetGUI("taserammo", PseudoGUIPosition.TOP, PluginHandler.Instance.Translation.TaserNoAmmo, 2);
                 ev.IsAllowed = false;
                 return;
@@ -215,7 +229,16 @@ namespace Mistaken.NotEnoughItems.Items
             }
         }
 
+        /// <inheritdoc/>
+        protected override void OnPlayingGunAudio(PlayingGunAudioEventArgs ev)
+        {
+            base.OnPlayingGunAudio(ev);
+            ev.IsAllowed = this.isShotAllowed;
+        }
+
         private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
+
+        private bool isShotAllowed = true;
 
         private IEnumerator<float> UpdateInterface(Player player)
         {

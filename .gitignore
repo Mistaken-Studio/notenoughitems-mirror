@@ -5,4 +5,6 @@
 /packages/StyleCop.Analyzers.1.1.118
 /NotEnoughItems/bin/Debug
 /NotEnoughItems/obj/Debug
-/.vs/NotEnoughItems
+/.vs
+/NotEnoughItems/obj/Release/.NETFramework,Version=v4.7.2.AssemblyAttributes.cs
+/NotEnoughItems/obj/Release/NotEnoughItems.csproj.AssemblyReference.cache

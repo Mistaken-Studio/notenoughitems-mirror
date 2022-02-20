@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Features;
@@ -12,7 +13,6 @@ using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
-using MEC;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
@@ -40,6 +40,9 @@ namespace Mistaken.NotEnoughItems.Items
         public override string Description { get; set; } = "Sticky Grenade Launcher";
 
         /// <inheritdoc/>
+        public override string DisplayName => "Grenade Launcher";
+
+        /// <inheritdoc/>
         public override float Weight { get; set; } = 0.7f;
 
         /// <inheritdoc/>
@@ -60,8 +63,9 @@ namespace Mistaken.NotEnoughItems.Items
             Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
             firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 82);
             player.AddItem(firearm);
-            RLogger.Log("GRENADE LAUNCHER", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
-
+            RLogger.Log("GRENADE LAUNCHER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
+            if (!this.grenadeQueue.ContainsKey(firearm.Serial))
+                this.grenadeQueue.Add(firearm.Serial, this.AddRandomGrenades());
             this.TrackedSerials.Add(firearm.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
@@ -74,7 +78,8 @@ namespace Mistaken.NotEnoughItems.Items
             player.AddItem(pickup);
             firearm.Status = new FirearmStatus(firearm.Status.Ammo, firearm.Status.Flags, 82);
             RLogger.Log("GRENADE LAUNCHER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
-
+            if (!this.grenadeQueue.ContainsKey(firearm.Info.Serial))
+                this.grenadeQueue.Add(firearm.Info.Serial, this.AddRandomGrenades());
             this.TrackedSerials.Add(firearm.Info.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
@@ -95,6 +100,8 @@ namespace Mistaken.NotEnoughItems.Items
             firearm.Scale = Size;
             firearm.Base.PickupDropModel.Info.Serial = firearm.Serial;
             this.TrackedSerials.Add(firearm.Serial);
+            if (!this.grenadeQueue.ContainsKey(firearm.Serial))
+                this.grenadeQueue.Add(firearm.Serial, this.AddRandomGrenades());
             var pickup = firearm.Spawn(position);
             ((FirearmPickup)pickup.Base).Status = new FirearmStatus(firearm.Ammo, FirearmStatusFlags.Cocked, 82);
             return pickup;
@@ -105,26 +112,41 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
-            if (ev.Firearm.Ammo >= this.ClipSize)
+            base.OnReloading(ev);
+            ev.IsAllowed = false;
+            if (!this.grenadeQueue.ContainsKey(ev.Firearm.Serial))
+            {
+                Log.Error("Somehow key not found");
+                this.grenadeQueue.Add(ev.Firearm.Serial, new List<CustomGrenadeTypes>());
+            }
+
+            if (this.grenadeQueue[ev.Firearm.Serial].Count >= this.ClipSize)
             {
                 ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.FullMagazineError, 3);
-                ev.IsAllowed = false;
                 return;
             }
 
-            if (!ev.Player.Items.Any(i => i.Type == ItemType.GrenadeHE))
+            if (this.cooldowns.TryGetValue(ev.Firearm.Serial, out var date) && date > DateTime.Now)
+            {
+                ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {(date - DateTime.Now).TotalSeconds} seconds", 3);
+                return;
+            }
+
+            var item = ev.Player.Items.FirstOrDefault(i => i.Type == ItemType.GrenadeHE);
+            if (item is null)
             {
                 ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.NoAmmoError, PluginHandler.Instance.Translation.GrenadeLauncherAmmo), 3);
-                ev.IsAllowed = false;
                 return;
             }
 
+            if (!this.cooldowns.ContainsKey(ev.Firearm.Serial))
+                this.cooldowns.Add(ev.Firearm.Serial, DateTime.Now);
+            this.cooldowns[ev.Firearm.Serial] = DateTime.Now.AddSeconds(5);
             RLogger.Log("GRENADE LAUNCHER", "RELOAD", $"Player {ev.Player.PlayerToString()} reloaded {this.Name}");
-            ev.Player.RemoveItem(ev.Player.Items.First(i => i.Type == ItemType.GrenadeHE));
+            this.grenadeQueue[ev.Firearm.Serial].Add(this.GetTypeFromGrenade(item));
+            ev.Player.RemoveItem(item);
             ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.ReloadedInfo, 3);
             ev.Player.Connection.Send(new RequestMessage(ev.Firearm.Serial, RequestType.Reload));
-            ev.Firearm.Ammo++;
-            ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
@@ -136,19 +158,45 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnShooting(Exiled.Events.EventArgs.ShootingEventArgs ev)
         {
-            if (((Exiled.API.Features.Items.Firearm)ev.Shooter.CurrentItem).Ammo == 0)
+            base.OnShooting(ev);
+            ev.IsAllowed = false;
+            this.isShotAllowed = true;
+            var serial = ev.Shooter.CurrentItem.Serial;
+            if (!this.grenadeQueue.ContainsKey(serial))
+            {
+                Log.Error("Somehow key not found");
+                this.grenadeQueue.Add(serial, new List<CustomGrenadeTypes>());
+            }
+
+            if (this.grenadeQueue[serial].Count == 0)
             {
                 ev.Shooter.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.EmptyMagazineError, 3);
-                ev.IsAllowed = false;
+                this.isShotAllowed = false;
                 return;
             }
 
-            StickyGrenadeItem.Throw(ev.Shooter);
-            RLogger.Log("GRENADE LAUNCHER", "FIRE", $"Player {ev.Shooter.PlayerToString()} fired {this.Name}");
-            ((Exiled.API.Features.Items.Firearm)ev.Shooter.CurrentItem).Ammo--;
-            Hitmarker.SendHitmarker(ev.Shooter.Connection, 5f);
-            ev.IsAllowed = false;
-            return;
+            string name = "GrenadeHE";
+            var toThrow = this.GetGrenadeFromType(this.grenadeQueue[serial][0]);
+            if (this.grenadeQueue[serial][0] == CustomGrenadeTypes.STICKY)
+            {
+                StickyGrenadeItem.Throw(ev.Shooter.ReferenceHub, toThrow);
+                name = StickyGrenadeItem.Instance.Name;
+            }
+            else if (this.grenadeQueue[serial][0] == CustomGrenadeTypes.IMPACT)
+            {
+                ImpItem.Throw(ev.Shooter.ReferenceHub, toThrow);
+                name = ImpItem.Instance.Name;
+            }
+            else
+            {
+                toThrow.Base.Owner = ev.Shooter.ReferenceHub;
+                Patches.ServerThrowPatch.ThrowedItems.Add(toThrow.Base);
+                toThrow.Base.ServerThrow(8.5f, 0.2f, new Vector3(10, 10, 0), ev.Shooter.ReferenceHub.playerMovementSync.PlayerVelocity);
+            }
+
+            RLogger.Log("GRENADE LAUNCHER", "FIRE", $"Player {ev.Shooter.PlayerToString()} fired {name}");
+            this.grenadeQueue[serial].RemoveAt(0);
+            Hitmarker.SendHitmarker(ev.Shooter.Connection, 3f);
         }
 
         /// <inheritdoc/>
@@ -159,29 +207,104 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
+        protected override void OnPlayingGunAudio(PlayingGunAudioEventArgs ev)
+        {
+            base.OnPlayingGunAudio(ev);
+            ev.IsAllowed = this.isShotAllowed;
+        }
+
+        /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
             Handlers.GrenadeLauncherHandler.Instance.RunCoroutine(this.UpdateInterface(player));
         }
 
+        private readonly Dictionary<ushort, List<CustomGrenadeTypes>> grenadeQueue = new Dictionary<ushort, List<CustomGrenadeTypes>>();
+
+        private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
+
+        private bool isShotAllowed = true;
+
         private IEnumerator<float> UpdateInterface(Player player)
         {
-            bool ammogiven = false;
-            yield return Timing.WaitForSeconds(0.1f);
+            yield return MEC.Timing.WaitForSeconds(0.1f);
             while (this.Check(player.CurrentItem))
             {
-                if (!ammogiven)
+                var serial = player.CurrentItem.Serial;
+                var type = this.grenadeQueue[serial].FirstOrDefault();
+                string grenadeType;
+                switch (type)
                 {
-                    player.Ammo[ItemType.Ammo9x19]++;
-                    ammogiven = true;
+                    case CustomGrenadeTypes.FRAG:
+                        grenadeType = "HE Grenade";
+                        break;
+                    case CustomGrenadeTypes.STICKY:
+                        grenadeType = "Sticky Grenade";
+                        break;
+                    case CustomGrenadeTypes.IMPACT:
+                        grenadeType = "Impact Grenade";
+                        break;
+                    default:
+                        grenadeType = "None";
+                        break;
                 }
 
-                player.SetGUI("grenadeLauncher", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.ItemHoldingMessage, PluginHandler.Instance.Translation.GrenadeLauncher));
-                yield return Timing.WaitForSeconds(1);
+                player.SetGUI("grenade_launcher_ammo", PseudoGUIPosition.BOTTOM, $"Current grenade type: {grenadeType}");
+                yield return MEC.Timing.WaitForSeconds(1f);
             }
 
-            player.Ammo[ItemType.Ammo9x19]--;
-            player.SetGUI("grenadeLauncher", PseudoGUIPosition.BOTTOM, null);
+            player.SetGUI("grenade_launcher_ammo", PseudoGUIPosition.BOTTOM, null);
+        }
+
+        private List<CustomGrenadeTypes> AddRandomGrenades()
+        {
+            List<CustomGrenadeTypes> tor = new List<CustomGrenadeTypes>();
+            while (tor.Count != 4)
+                tor.Add((CustomGrenadeTypes)UnityEngine.Random.Range(1, 4));
+
+            return tor;
+        }
+
+        private ExplosiveGrenade GetGrenadeFromType(CustomGrenadeTypes type, Player owner = null)
+        {
+            ExplosiveGrenade grenade = null;
+            switch (type)
+            {
+                case CustomGrenadeTypes.FRAG:
+                    {
+                        grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
+                        return grenade;
+                    }
+
+                case CustomGrenadeTypes.STICKY:
+                    {
+                        grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
+                        StickyGrenadeItem.Instance.TrackedSerials.Add(grenade.Serial);
+                        return grenade;
+                    }
+
+                case CustomGrenadeTypes.IMPACT:
+                    {
+                        grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
+                        ImpItem.Instance.TrackedSerials.Add(grenade.Serial);
+                        return grenade;
+                    }
+
+                default:
+                    return grenade;
+            }
+        }
+
+        private CustomGrenadeTypes GetTypeFromGrenade(Item item)
+        {
+            if (!(item is Throwable) && item.Type != ItemType.GrenadeHE)
+                return CustomGrenadeTypes.NONE;
+            if (StickyGrenadeItem.Instance.Check(item))
+                return CustomGrenadeTypes.STICKY;
+            else if (ImpItem.Instance.Check(item))
+                return CustomGrenadeTypes.IMPACT;
+            else
+                return CustomGrenadeTypes.FRAG;
         }
     }
 }

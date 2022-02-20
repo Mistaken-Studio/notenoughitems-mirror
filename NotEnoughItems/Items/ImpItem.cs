@@ -4,14 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs;
-using MEC;
+using InventorySystem.Items.ThrowableProjectiles;
+using Mirror;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
@@ -25,6 +24,45 @@ namespace Mistaken.NotEnoughItems.Items
     /// </summary>
     public class ImpItem : MistakenCustomGrenade
     {
+        /// <summary>
+        /// Throws Impact Grenade.
+        /// </summary>
+        /// <param name="ownerHub">Throwing player's hub.</param>
+        /// <param name="grenade">Grenade to be thrown.</param>
+        /// <returns>Thrown projectile.</returns>
+        public static ThrownProjectile Throw(ReferenceHub ownerHub, Throwable grenade = null)
+        {
+            if (ownerHub is null)
+                ownerHub = Server.Host.ReferenceHub;
+            if (grenade is null)
+                grenade = new Throwable(ItemType.GrenadeHE);
+            grenade.Base.Owner = ownerHub;
+            Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
+            ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
+            InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
+            {
+                ItemId = grenade.Type,
+                Locked = !grenade.Base._repickupable,
+                Serial = grenade.Serial,
+                Weight = 0.01f,
+                Position = thrownProjectile.transform.position,
+                Rotation = new LowPrecisionQuaternion(thrownProjectile.transform.rotation),
+            };
+
+            thrownProjectile.NetworkInfo = pickupSyncInfo;
+            thrownProjectile.PreviousOwner = new Footprinting.Footprint(ownerHub);
+            NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
+            Patches.ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
+            thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
+            Rigidbody rb;
+            if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
+                grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), ownerHub.playerMovementSync.PlayerVelocity, 35, 0.18f);
+
+            thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
+            thrownProjectile.ServerActivate();
+            return thrownProjectile;
+        }
+
         /// <inheritdoc/>
         public override MistakenCustomItems CustomItem => MistakenCustomItems.IMPACT_GRENADE;
 
@@ -38,6 +76,9 @@ namespace Mistaken.NotEnoughItems.Items
         public override string Description { get; set; } = "Grenade that explodes on impact";
 
         /// <inheritdoc/>
+        public override string DisplayName => "Impact Grenade";
+
+        /// <inheritdoc/>
         public override float Weight { get; set; } = 0.01f;
 
         /// <inheritdoc/>
@@ -48,6 +89,13 @@ namespace Mistaken.NotEnoughItems.Items
 
         /// <inheritdoc/>
         public override float FuseTime { get; set; } = 3;
+
+        /// <inheritdoc/>
+        public override void Init()
+        {
+            base.Init();
+            Instance = this;
+        }
 
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage)
@@ -75,6 +123,8 @@ namespace Mistaken.NotEnoughItems.Items
             return grenade.Spawn(position);
         }
 
+        internal static ImpItem Instance { get; private set; }
+
         /// <inheritdoc/>
         protected override void ShowPickedUpMessage(Player player)
         {
@@ -85,6 +135,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnThrowing(ThrowingItemEventArgs ev)
         {
+            base.OnThrowing(ev);
             if (ev.RequestType != ThrowRequest.BeginThrow)
             {
                 RLogger.Log("IMPACT GRENADE", "THROW", $"{ev.Player.PlayerToString()} threw an {this.Name}");
@@ -96,6 +147,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnExploding(ExplodingGrenadeEventArgs ev)
         {
+            base.OnExploding(ev);
             RLogger.Log("IMPACT GRENADE", "EXPLODED", $"Impact grenade exploded");
             foreach (var player in ev.TargetsToAffect)
                 RLogger.Log("IMPACT GRENADE", "HURT", $"{player.PlayerToString()} was hurt by an {this.Name}");
@@ -104,19 +156,6 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.ImpHandler.Instance.RunCoroutine(this.UpdateInterface(player));
-        }
-
-        private IEnumerator<float> UpdateInterface(Player player)
-        {
-            yield return Timing.WaitForSeconds(0.1f);
-            while (this.Check(player.CurrentItem))
-            {
-                player.SetGUI("impact", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.ItemHoldingMessage, PluginHandler.Instance.Translation.ImpactGrenade));
-                yield return Timing.WaitForSeconds(1);
-            }
-
-            player.SetGUI("impact", PseudoGUIPosition.BOTTOM, null);
         }
     }
 }

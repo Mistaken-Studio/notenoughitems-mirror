@@ -13,7 +13,6 @@ using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
-using MEC;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
@@ -39,6 +38,9 @@ namespace Mistaken.NotEnoughItems.Items
 
         /// <inheritdoc/>
         public override string Description { get; set; } = "Medic Gun";
+
+        /// <inheritdoc/>
+        public override string DisplayName => "Medic Gun";
 
         /// <inheritdoc/>
         public override float Weight { get; set; } = 0.75f;
@@ -114,20 +116,29 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
         {
+            base.OnReloading(ev);
+            ev.IsAllowed = false;
             if (ev.Firearm.Ammo >= this.ClipSize)
             {
                 ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.FullMagazineError, 3);
-                ev.IsAllowed = false;
+                return;
+            }
+
+            if (this.cooldowns.TryGetValue(ev.Firearm.Serial, out var date) && date > DateTime.Now)
+            {
+                ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {(date - DateTime.Now).TotalSeconds} seconds", 3);
                 return;
             }
 
             if (!ev.Player.Items.Any(i => i.Type == ItemType.Adrenaline))
             {
                 ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.NoAmmoError, PluginHandler.Instance.Translation.MedicGunAmmo), 3);
-                ev.IsAllowed = false;
                 return;
             }
 
+            if (!this.cooldowns.ContainsKey(ev.Firearm.Serial))
+                this.cooldowns.Add(ev.Firearm.Serial, DateTime.Now);
+            this.cooldowns[ev.Firearm.Serial] = DateTime.Now.AddSeconds(5);
             RLogger.Log("MEDIC GUN", "RELOAD", $"Player {ev.Player.PlayerToString()} reloaded {this.Name}");
             ev.Player.RemoveItem(ev.Player.Items.First(i => i.Type == ItemType.Adrenaline));
             ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.ReloadedInfo, 3);
@@ -139,39 +150,32 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void OnUnloadingWeapon(Exiled.Events.EventArgs.UnloadingWeaponEventArgs ev)
         {
+            base.OnUnloadingWeapon(ev);
             ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
         protected override void OnShot(Exiled.Events.EventArgs.ShotEventArgs ev)
         {
+            base.OnShot(ev);
             if (!(ev.Target is null))
             {
                 var hpToHeal = Math.Min(ev.Target.MaxHealth - ev.Target.Health, PluginHandler.Instance.Config.HealAmount);
-                var ahpToHeal = PluginHandler.Instance.Config.HealAmount - hpToHeal;
+                var ahpToHeal = (PluginHandler.Instance.Config.HealAmount - hpToHeal) * 2f;
                 ev.Target.Health += hpToHeal;
-                ev.Target.ArtificialHealth += ahpToHeal;
+                if (Math.Floor(ahpToHeal) != 0)
+                    ((PlayerStatsSystem.AhpStat)ev.Target.ReferenceHub.playerStats.StatModules[1]).ServerAddProcess(ahpToHeal, ahpToHeal, ahpToHeal / 10f, 0.65f, 15f, false);
                 RLogger.Log("MEDIC GUN", "HEAL", $"Player {ev.Shooter.PlayerToString()} hit player {ev.Target.PlayerToString()} and regenerated {hpToHeal} hp and {ahpToHeal} ahp");
                 ev.CanHurt = false;
+                Hitmarker.SendHitmarker(ev.Shooter.Connection, 2f);
             }
         }
 
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.MedicGunHandler.Instance.RunCoroutine(this.UpdateInterface(player));
         }
 
-        private IEnumerator<float> UpdateInterface(Player player)
-        {
-            yield return Timing.WaitForSeconds(0.1f);
-            while (this.Check(player.CurrentItem))
-            {
-                player.SetGUI("ci_medic_gun_hold", PseudoGUIPosition.BOTTOM, string.Format(PluginHandler.Instance.Translation.ItemHoldingMessage, PluginHandler.Instance.Translation.MedicGun));
-                yield return Timing.WaitForSeconds(1f);
-            }
-
-            player.SetGUI("ci_medic_gun_hold", PseudoGUIPosition.BOTTOM, null);
-        }
+        private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
     }
 }

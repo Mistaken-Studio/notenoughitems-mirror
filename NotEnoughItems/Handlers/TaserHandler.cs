@@ -7,10 +7,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Features;
-using Exiled.API.Features.Items;
 using Exiled.API.Interfaces;
 using Mistaken.API;
-using Mistaken.API.CustomItems;
 using Mistaken.API.Diagnostics;
 using Mistaken.API.Extensions;
 using UnityEngine;
@@ -78,7 +76,7 @@ namespace Mistaken.NotEnoughItems.Handlers
             while (toSpawn > 0)
             {
                 var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
-                MistakenCustomWeapon.TrySpawn(MistakenCustomItems.TASER, chamber._spawnpoint.position + (Vector3.up / 10), out var pickup);
+                var pickup = Items.TaserItem.Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
                 chamber._content.Add(pickup.Base);
                 toSpawn--;
             }
@@ -90,15 +88,16 @@ namespace Mistaken.NotEnoughItems.Handlers
                 return;
             if (ev.NewRole == RoleType.FacilityGuard)
             {
-                ev.Items.Remove(ItemType.GunCOM18);
+                if (ev.Player.Items.Any(x => x.Type == ItemType.GunCOM18))
+                    ev.Items.Remove(ItemType.GunCOM18);
                 this.CallDelayed(
                     0.25f,
                     () =>
                     {
                         if (ev.Player.Items.Count >= 8)
-                            MistakenCustomWeapon.TrySpawn(MistakenCustomItems.TASER, ev.Player.Position, out _);
+                            Items.TaserItem.Instance.Spawn(ev.Player.Position);
                         else
-                            MistakenCustomWeapon.TryGive(ev.Player, MistakenCustomItems.TASER);
+                            Items.TaserItem.Instance.Give(ev.Player);
                     },
                     "ChangingRole");
             }
