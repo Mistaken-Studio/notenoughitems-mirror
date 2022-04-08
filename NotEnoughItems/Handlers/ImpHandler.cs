@@ -19,7 +19,6 @@ namespace Mistaken.NotEnoughItems.Handlers
             : base(plugin)
         {
             Instance = this;
-            new Items.ImpItem().TryRegister();
         }
 
         /// <inheritdoc/>

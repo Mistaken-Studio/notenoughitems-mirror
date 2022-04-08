@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Features;
+using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
 using Mistaken.API.CustomItems;
@@ -22,6 +22,7 @@ using UnityEngine;
 namespace Mistaken.NotEnoughItems.Items
 {
     /// <inheritdoc/>
+    [CustomItem(ItemType.GunCOM18)]
     public class GrenadeLauncherItem : MistakenCustomWeapon
     {
         /// <inheritdoc/>
@@ -49,9 +50,6 @@ namespace Mistaken.NotEnoughItems.Items
         public override SpawnProperties SpawnProperties { get; set; }
 
         /// <inheritdoc/>
-        public override Modifiers Modifiers { get; set; }
-
-        /// <inheritdoc/>
         public override float Damage { get; set; } = 0;
 
         /// <inheritdoc/>
@@ -60,7 +58,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage)
         {
-            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
+            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
             firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 82);
             player.AddItem(firearm);
             RLogger.Log("GRENADE LAUNCHER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
@@ -75,8 +73,8 @@ namespace Mistaken.NotEnoughItems.Items
         public override void Give(Player player, Pickup pickup, bool displayMessage = true)
         {
             FirearmPickup firearm = (FirearmPickup)pickup.Base;
-            player.AddItem(pickup);
             firearm.Status = new FirearmStatus(firearm.Status.Ammo, firearm.Status.Flags, 82);
+            player.AddItem(pickup);
             RLogger.Log("GRENADE LAUNCHER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
             if (!this.grenadeQueue.ContainsKey(firearm.Info.Serial))
                 this.grenadeQueue.Add(firearm.Info.Serial, this.AddRandomGrenades());
@@ -88,9 +86,9 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
+            InventorySystem.Items.Firearms.Firearm firearm = (InventorySystem.Items.Firearms.Firearm)Item.Create(this.Type).Base;
             RLogger.Log("GRENADE LAUNCHER", "SPAWN", $"{this.Name} spawned");
-            return this.Spawn(position, firearm);
+            return this.Spawn(position, Item.Get(firearm));
         }
 
         /// <inheritdoc/>
@@ -267,32 +265,31 @@ namespace Mistaken.NotEnoughItems.Items
 
         private ExplosiveGrenade GetGrenadeFromType(CustomGrenadeTypes type, Player owner = null)
         {
-            ExplosiveGrenade grenade = null;
+            Item grenade = null;
             switch (type)
             {
                 case CustomGrenadeTypes.FRAG:
                     {
-                        grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
-                        return grenade;
+                        grenade = Item.Create(ItemType.GrenadeHE, owner);
+                        break;
                     }
 
                 case CustomGrenadeTypes.STICKY:
                     {
-                        grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
+                        grenade = Item.Create(ItemType.GrenadeHE, owner);
                         StickyGrenadeItem.Instance.TrackedSerials.Add(grenade.Serial);
-                        return grenade;
+                        break;
                     }
 
                 case CustomGrenadeTypes.IMPACT:
                     {
-                        grenade = new ExplosiveGrenade(ItemType.GrenadeHE, owner);
+                        grenade = Item.Create(ItemType.GrenadeHE, owner);
                         ImpItem.Instance.TrackedSerials.Add(grenade.Serial);
-                        return grenade;
+                        break;
                     }
-
-                default:
-                    return grenade;
             }
+
+            return (ExplosiveGrenade)grenade;
         }
 
         private CustomGrenadeTypes GetTypeFromGrenade(Item item)

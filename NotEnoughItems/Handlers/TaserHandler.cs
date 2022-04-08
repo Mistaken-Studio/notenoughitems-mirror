@@ -23,7 +23,6 @@ namespace Mistaken.NotEnoughItems.Handlers
             : base(plugin)
         {
             Instance = this;
-            new Items.TaserItem().TryRegister();
         }
 
         /// <inheritdoc/>
@@ -63,7 +62,7 @@ namespace Mistaken.NotEnoughItems.Handlers
 
         private void Server_RoundStarted()
         {
-            foreach (var door in Map.Doors)
+            foreach (var door in Door.List)
             {
                 foreach (var child in door.Base.GetComponentsInChildren<BoxCollider>())
                     Doors[child.gameObject] = door;

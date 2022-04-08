@@ -9,9 +9,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using InventorySystem.Items.Firearms;
 using MEC;
 using Mistaken.API;
@@ -23,9 +23,8 @@ using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Items
 {
-    /// <summary>
-    /// Com18 that applies some effects on target.
-    /// </summary>
+    /// <inheritdoc/>
+    [CustomItem(ItemType.GunCOM15)]
     public class TaserItem : MistakenCustomWeapon
     {
         /// <inheritdoc/>
@@ -50,9 +49,6 @@ namespace Mistaken.NotEnoughItems.Items
         public override SpawnProperties SpawnProperties { get; set; }
 
         /// <inheritdoc/>
-        public override Modifiers Modifiers { get; set; } = new Modifiers(0, 0, 0);
-
-        /// <inheritdoc/>
         public override byte ClipSize { get; set; } = 1;
 
         /// <inheritdoc/>
@@ -68,7 +64,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage = true)
         {
-            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
+            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
             firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
             player.AddItem(firearm);
             RLogger.Log("TASER", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
@@ -94,7 +90,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            Exiled.API.Features.Items.Firearm firearm = new Exiled.API.Features.Items.Firearm(this.Type);
+            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
             RLogger.Log("TASER", "SPAWN", $"Taser spawned");
             return this.Spawn(position, firearm);
         }
@@ -193,7 +189,7 @@ namespace Mistaken.NotEnoughItems.Items
                         if (targetPlayer.CurrentItem != null && !Handlers.TaserHandler.UsableItems.Contains(targetPlayer.CurrentItem.Type))
                         {
                             Exiled.Events.Handlers.Player.OnDroppingItem(new Exiled.Events.EventArgs.DroppingItemEventArgs(targetPlayer, targetPlayer.CurrentItem.Base, false));
-                            var pickup = new Item(targetPlayer.CurrentItem.Type).Spawn(targetPlayer.Position);
+                            var pickup = Item.Create(targetPlayer.CurrentItem.Type).Spawn(targetPlayer.Position);
                             pickup.Base.Info.Serial = targetPlayer.CurrentItem.Serial;
 
                             targetPlayer.DropItem(targetPlayer.CurrentItem);
@@ -212,6 +208,7 @@ namespace Mistaken.NotEnoughItems.Items
                     UnityEngine.Physics.Raycast(ev.Shooter.Position, ev.Shooter.CameraTransform.forward, out RaycastHit hitinfo);
                     if (hitinfo.collider != null)
                     {
+                        Log.Debug($"TaserItem Debug: {hitinfo.collider.name}", PluginHandler.Instance.Config.VerbouseOutput);
                         if (!Handlers.TaserHandler.Doors.TryGetValue(hitinfo.collider.gameObject, out var door) || door == null)
                         {
                             RLogger.Log("TASER", "HIT", $"{ev.Shooter.PlayerToString()} didn't hit anyone");

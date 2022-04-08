@@ -24,7 +24,6 @@ namespace Mistaken.NotEnoughItems.Handlers
             : base(plugin)
         {
             Instance = this;
-            new Items.GrenadeLauncherItem().TryRegister();
         }
 
         /// <inheritdoc/>

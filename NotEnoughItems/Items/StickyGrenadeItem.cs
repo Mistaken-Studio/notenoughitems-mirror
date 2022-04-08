@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.Events.EventArgs;
@@ -22,6 +23,7 @@ using UnityEngine;
 namespace Mistaken.NotEnoughItems.Items
 {
     /// <inheritdoc/>
+    [CustomItem(ItemType.GrenadeHE)]
     public class StickyGrenadeItem : MistakenCustomGrenade
     {
         /// <summary>
@@ -35,7 +37,7 @@ namespace Mistaken.NotEnoughItems.Items
             if (ownerHub is null)
                 ownerHub = Server.Host.ReferenceHub;
             if (grenade is null)
-                grenade = new Throwable(ItemType.GrenadeHE);
+                grenade = (Throwable)Item.Create(ItemType.GrenadeHE);
             grenade.Base.Owner = ownerHub;
             Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
             ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
@@ -107,7 +109,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            ExplosiveGrenade grenade = new ExplosiveGrenade(this.Type);
+            ExplosiveGrenade grenade = (ExplosiveGrenade)Item.Create(this.Type);
             RLogger.Log("STICKY GRENADE", "SPAWN", $"{this.Name} spawned");
             return this.Spawn(position, grenade);
         }
