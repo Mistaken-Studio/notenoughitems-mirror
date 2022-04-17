@@ -14,6 +14,7 @@ using Exiled.API.Features.Spawn;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
 using Mistaken.API.CustomItems;
+using Mistaken.API.Diagnostics;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
 using Mistaken.RoundLogger;
@@ -214,7 +215,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.GrenadeLauncherHandler.Instance.RunCoroutine(this.UpdateInterface(player));
+            Module.RunSafeCoroutine(this.UpdateInterface(player), "GrenadeLauncherItem_UpdateInterface");
         }
 
         private readonly Dictionary<ushort, List<CustomGrenadeTypes>> grenadeQueue = new Dictionary<ushort, List<CustomGrenadeTypes>>();

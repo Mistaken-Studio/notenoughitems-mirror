@@ -16,6 +16,7 @@ using InventorySystem.Items.Firearms;
 using MEC;
 using Mistaken.API;
 using Mistaken.API.CustomItems;
+using Mistaken.API.Diagnostics;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
 using Mistaken.RoundLogger;
@@ -113,14 +114,46 @@ namespace Mistaken.NotEnoughItems.Items
             return pickup;
         }
 
+        internal static readonly Dictionary<GameObject, Door> Doors = new Dictionary<GameObject, Door>();
+
+        internal static readonly HashSet<ItemType> UsableItems = new HashSet<ItemType>()
+        {
+            ItemType.MicroHID,
+            ItemType.Medkit,
+            ItemType.Painkillers,
+            ItemType.SCP018,
+            ItemType.SCP207,
+            ItemType.SCP268,
+            ItemType.SCP500,
+            ItemType.GrenadeHE,
+            ItemType.GrenadeFlash,
+            ItemType.Adrenaline,
+        };
+
         internal static readonly Vector3 Size = new Vector3(1f, 0.65f, 1f);
 
         internal static TaserItem Instance { get; private set; }
 
         /// <inheritdoc/>
+        protected override void SubscribeEvents()
+        {
+            base.SubscribeEvents();
+            Exiled.Events.Handlers.Server.RoundStarted += this.Server_RoundStarted;
+            Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
+        }
+
+        /// <inheritdoc/>
+        protected override void UnsubscribeEvents()
+        {
+            base.UnsubscribeEvents();
+            Exiled.Events.Handlers.Server.RoundStarted -= this.Server_RoundStarted;
+            Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
+        }
+
+        /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.TaserHandler.Instance.RunCoroutine(this.UpdateInterface(player), "Taser.UpdateInterface");
+            Module.RunSafeCoroutine(this.UpdateInterface(player), "Taser.UpdateInterface");
         }
 
         /// <inheritdoc/>
@@ -186,7 +219,7 @@ namespace Mistaken.NotEnoughItems.Items
                         targetPlayer.EnableEffect<CustomPlayerEffects.Deafened>(10);
                         targetPlayer.EnableEffect<CustomPlayerEffects.Blinded>(10);
                         targetPlayer.EnableEffect<CustomPlayerEffects.Amnesia>(5);
-                        if (targetPlayer.CurrentItem != null && !Handlers.TaserHandler.UsableItems.Contains(targetPlayer.CurrentItem.Type))
+                        if (targetPlayer.CurrentItem != null && !UsableItems.Contains(targetPlayer.CurrentItem.Type))
                         {
                             Exiled.Events.Handlers.Player.OnDroppingItem(new Exiled.Events.EventArgs.DroppingItemEventArgs(targetPlayer, targetPlayer.CurrentItem.Base, false));
                             var pickup = Item.Create(targetPlayer.CurrentItem.Type).Spawn(targetPlayer.Position);
@@ -209,7 +242,7 @@ namespace Mistaken.NotEnoughItems.Items
                     if (hitinfo.collider != null)
                     {
                         Log.Debug($"TaserItem Debug: {hitinfo.collider.name}", PluginHandler.Instance.Config.VerbouseOutput);
-                        if (!Handlers.TaserHandler.Doors.TryGetValue(hitinfo.collider.gameObject, out var door) || door == null)
+                        if (!Doors.TryGetValue(hitinfo.collider.gameObject, out var door) || door == null)
                         {
                             RLogger.Log("TASER", "HIT", $"{ev.Shooter.PlayerToString()} didn't hit anyone");
                             this.cooldowns[ev.Shooter.CurrentItem.Serial] = DateTime.Now.AddSeconds(PluginHandler.Instance.Config.MissCooldown);
@@ -219,7 +252,7 @@ namespace Mistaken.NotEnoughItems.Items
                         Hitmarker.SendHitmarker(ev.Shooter.Connection, 20);
                         door.ChangeLock(DoorLockType.NoPower);
                         RLogger.Log("TASER", "HIT", $"{ev.Shooter.PlayerToString()} hit door");
-                        Handlers.TaserHandler.Instance.CallDelayed(10, () => door.ChangeLock(DoorLockType.NoPower), "UnlockDoors");
+                        Module.CallSafeDelayed(10, () => door.ChangeLock(DoorLockType.NoPower), "UnlockDoors");
                         return;
                     }
                 }
@@ -236,6 +269,48 @@ namespace Mistaken.NotEnoughItems.Items
         private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
 
         private bool isShotAllowed = true;
+
+        private void Server_RoundStarted()
+        {
+            foreach (var door in Door.List)
+            {
+                foreach (var child in door.Base.GetComponentsInChildren<BoxCollider>())
+                    Doors[child.gameObject] = door;
+            }
+
+            var structureLockers = UnityEngine.Object.FindObjectsOfType<MapGeneration.Distributors.SpawnableStructure>().Where(x => x.StructureType == MapGeneration.Distributors.StructureType.LargeGunLocker);
+            var lockers = structureLockers.Select(x => x as MapGeneration.Distributors.Locker).Where(x => x.Chambers.Length > 8).ToArray();
+            var locker = lockers[UnityEngine.Random.Range(0, lockers.Length)];
+            int toSpawn = 1;
+            while (toSpawn > 0)
+            {
+                var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
+                var pickup = Items.TaserItem.Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
+                chamber._content.Add(pickup.Base);
+                toSpawn--;
+            }
+        }
+
+        private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
+        {
+            if (ev.Player.GetSessionVariable<bool>(SessionVarType.ITEM_LESS_CLSSS_CHANGE))
+                return;
+            if (ev.NewRole == RoleType.FacilityGuard)
+            {
+                if (ev.Player.Items.Any(x => x.Type == ItemType.GunCOM18))
+                    ev.Items.Remove(ItemType.GunCOM18);
+                Module.CallSafeDelayed(
+                    0.25f,
+                    () =>
+                    {
+                        if (ev.Player.Items.Count >= 8)
+                            Items.TaserItem.Instance.Spawn(ev.Player.Position);
+                        else
+                            Items.TaserItem.Instance.Give(ev.Player);
+                    },
+                    "ChangingRole");
+            }
+        }
 
         private IEnumerator<float> UpdateInterface(Player player)
         {

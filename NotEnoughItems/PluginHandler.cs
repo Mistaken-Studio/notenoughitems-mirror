@@ -8,7 +8,6 @@ using System;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using HarmonyLib;
-using Mistaken.NotEnoughItems.Handlers;
 
 namespace Mistaken.NotEnoughItems
 {
@@ -35,13 +34,6 @@ namespace Mistaken.NotEnoughItems
             Instance = this;
             harmony = new Harmony("mistaken.notenoughitems.patch");
             harmony.PatchAll();
-
-            new GrenadeLauncherHandler(this);
-            new ImpHandler(this);
-            new MedicGunHandler(this);
-            new StickyGrenadeHandler(this);
-            new TaserHandler(this);
-
             API.Diagnostics.Module.OnEnable(this);
 
             base.OnEnabled();

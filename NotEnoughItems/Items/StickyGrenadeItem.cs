@@ -15,6 +15,7 @@ using InventorySystem.Items.ThrowableProjectiles;
 using MEC;
 using Mirror;
 using Mistaken.API.CustomItems;
+using Mistaken.API.Diagnostics;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
 using Mistaken.RoundLogger;
@@ -148,7 +149,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Handlers.StickyGrenadeHandler.Instance.RunCoroutine(this.UpdateInterface(player));
+            Module.RunSafeCoroutine(this.UpdateInterface(player), "StickyGrenadeItem_UpdateInterface");
         }
 
         private IEnumerator<float> UpdateInterface(Player player)
