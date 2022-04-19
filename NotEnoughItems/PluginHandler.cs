@@ -34,7 +34,6 @@ namespace Mistaken.NotEnoughItems
             Instance = this;
             harmony = new Harmony("mistaken.notenoughitems.patch");
             harmony.PatchAll();
-            API.Diagnostics.Module.OnEnable(this);
 
             base.OnEnabled();
         }
@@ -43,8 +42,6 @@ namespace Mistaken.NotEnoughItems
         public override void OnDisabled()
         {
             harmony.UnpatchAll();
-
-            API.Diagnostics.Module.OnDisable(this);
 
             base.OnDisabled();
         }
