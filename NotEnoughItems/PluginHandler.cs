@@ -8,7 +8,6 @@ using System;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using HarmonyLib;
-using Mistaken.NotEnoughItems.Handlers;
 
 namespace Mistaken.NotEnoughItems
 {
@@ -27,7 +26,7 @@ namespace Mistaken.NotEnoughItems
         public override PluginPriority Priority => PluginPriority.Default;
 
         /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(4, 1, 2);
+        public override Version RequiredExiledVersion => new Version(5, 0, 0);
 
         /// <inheritdoc/>
         public override void OnEnabled()
@@ -36,14 +35,6 @@ namespace Mistaken.NotEnoughItems
             harmony = new Harmony("mistaken.notenoughitems.patch");
             harmony.PatchAll();
 
-            new GrenadeLauncherHandler(this);
-            new ImpHandler(this);
-            new MedicGunHandler(this);
-            new StickyGrenadeHandler(this);
-            new TaserHandler(this);
-
-            API.Diagnostics.Module.OnEnable(this);
-
             base.OnEnabled();
         }
 
@@ -51,8 +42,6 @@ namespace Mistaken.NotEnoughItems
         public override void OnDisabled()
         {
             harmony.UnpatchAll();
-
-            API.Diagnostics.Module.OnDisable(this);
 
             base.OnDisabled();
         }

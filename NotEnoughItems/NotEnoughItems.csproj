@@ -61,11 +61,6 @@
     <Compile Include="Components\ImpComponent.cs" />
     <Compile Include="Components\StickyComponent.cs" />
     <Compile Include="CustomGrenadeTypes.cs" />
-    <Compile Include="Handlers\GrenadeLauncherHandler.cs" />
-    <Compile Include="Handlers\ImpHandler.cs" />
-    <Compile Include="Handlers\MedicGunHandler.cs" />
-    <Compile Include="Handlers\StickyGrenadeHandler.cs" />
-    <Compile Include="Handlers\TaserHandler.cs" />
     <Compile Include="Items\GrenadeLauncherItem.cs" />
     <Compile Include="Items\ImpItem.cs" />
     <Compile Include="Items\MedicGunItem.cs" />

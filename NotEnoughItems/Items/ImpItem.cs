@@ -4,8 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Linq;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.Events.EventArgs;
@@ -19,9 +21,8 @@ using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Items
 {
-    /// <summary>
-    /// Grenade that explodes on impact.
-    /// </summary>
+    /// <inheritdoc/>
+    [CustomItem(ItemType.GrenadeHE)]
     public class ImpItem : MistakenCustomGrenade
     {
         /// <summary>
@@ -35,7 +36,7 @@ namespace Mistaken.NotEnoughItems.Items
             if (ownerHub is null)
                 ownerHub = Server.Host.ReferenceHub;
             if (grenade is null)
-                grenade = new Throwable(ItemType.GrenadeHE);
+                grenade = (Throwable)Item.Create(ItemType.GrenadeHE);
             grenade.Base.Owner = ownerHub;
             Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
             ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
@@ -107,7 +108,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override Pickup Spawn(Vector3 position)
         {
-            ExplosiveGrenade grenade = new ExplosiveGrenade(this.Type);
+            ExplosiveGrenade grenade = (ExplosiveGrenade)Item.Create(this.Type);
             RLogger.Log("IMPACT GRENADE", "SPAWN", $"{this.Name} spawned");
             return this.Spawn(position, grenade);
         }
@@ -116,14 +117,31 @@ namespace Mistaken.NotEnoughItems.Items
         public override Pickup Spawn(Vector3 position, Item item)
         {
             var grenade = item as Throwable;
-            if (grenade is null) Log.Debug("Throwable is null");
-            grenade.Scale = Handlers.ImpHandler.Size;
+            if (grenade is null)
+                Log.Debug("Throwable is null");
+            grenade.Scale = Size;
             grenade.Base.PickupDropModel.Info.Serial = grenade.Serial;
             this.TrackedSerials.Add(grenade.Serial);
             return grenade.Spawn(position);
         }
 
+        internal static readonly Vector3 Size = new Vector3(1f, 0.4f, 1f);
+
         internal static ImpItem Instance { get; private set; }
+
+        /// <inheritdoc/>
+        protected override void SubscribeEvents()
+        {
+            base.SubscribeEvents();
+            Exiled.Events.Handlers.Server.RoundStarted += this.Server_RoundStarted;
+        }
+
+        /// <inheritdoc/>
+        protected override void UnsubscribeEvents()
+        {
+            base.UnsubscribeEvents();
+            Exiled.Events.Handlers.Server.RoundStarted -= this.Server_RoundStarted;
+        }
 
         /// <inheritdoc/>
         protected override void ShowPickedUpMessage(Player player)
@@ -156,6 +174,23 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
+        }
+
+        private void Server_RoundStarted()
+        {
+            Patches.ExplodeDestructiblesPatch.Grenades.Clear();
+            Patches.ServerThrowPatch.ThrowedItems.Clear();
+            var structureLockers = UnityEngine.Object.FindObjectsOfType<MapGeneration.Distributors.SpawnableStructure>().Where(x => x.StructureType == MapGeneration.Distributors.StructureType.LargeGunLocker);
+            var lockers = structureLockers.Select(x => x as MapGeneration.Distributors.Locker).Where(x => x.Chambers.Length > 8).ToArray();
+            var locker = lockers[UnityEngine.Random.Range(0, lockers.Length)];
+            int toSpawn = 6;
+            while (toSpawn > 0)
+            {
+                var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
+                var pickup = Items.ImpItem.Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
+                chamber._content.Add(pickup.Base);
+                toSpawn--;
+            }
         }
     }
 }
