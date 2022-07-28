@@ -71,7 +71,7 @@ namespace Mistaken.NotEnoughItems.Items
         public override void Give(Player player, Pickup pickup, bool displayMessage = true)
         {
             FirearmPickup firearm = (FirearmPickup)pickup.Base;
-            firearm.Status = new FirearmStatus(firearm.Status.Ammo, firearm.Status.Flags, 594);
+            firearm.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 594);
             player.AddItem(pickup);
             RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
             this.TrackedSerials.Add(firearm.Info.Serial);
@@ -80,23 +80,19 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position)
+        public override Pickup Spawn(Vector3 position, Player previousOwner = null)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
-            firearm.Ammo = this.ClipSize;
-            firearm.Scale = Size;
-            RLogger.Log("MEDIC GUN", "SPAWN", $"Spawned {this.Name}");
-            return this.Spawn(position, firearm);
+            return this.Spawn(position, this.CreateCorrectItem(), previousOwner);
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position, Item item)
+        public override Pickup Spawn(Vector3 position, Item item, Player previousOwner = null)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)item;
-            firearm.Scale = Size;
-            this.TrackedSerials.Add(firearm.Serial);
-            var pickup = firearm.Spawn(position);
-            ((FirearmPickup)pickup.Base).Status = new FirearmStatus(firearm.Ammo, FirearmStatusFlags.Cocked, 594);
+            var pickup = base.Spawn(position, item, previousOwner);
+            RLogger.Log("MEDIC GUN", "SPAWN", $"Spawned {this.Name}");
+            pickup.Scale = Size;
+            this.TrackedSerials.Add(pickup.Serial);
+            ((FirearmPickup)pickup.Base).Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 594);
             return pickup;
         }
 

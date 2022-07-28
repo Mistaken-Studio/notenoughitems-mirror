@@ -106,23 +106,21 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position)
+        public override Pickup Spawn(Vector3 position, Player previousOwner = null)
         {
-            ExplosiveGrenade grenade = (ExplosiveGrenade)Item.Create(this.Type);
-            RLogger.Log("IMPACT GRENADE", "SPAWN", $"{this.Name} spawned");
-            return this.Spawn(position, grenade);
+            return this.Spawn(position, this.CreateCorrectItem(), previousOwner);
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position, Item item)
+        public override Pickup Spawn(Vector3 position, Item item, Player previousOwner = null)
         {
-            var grenade = item as Throwable;
-            if (grenade is null)
-                Log.Debug("Throwable is null");
-            grenade.Scale = Size;
-            grenade.Base.PickupDropModel.Info.Serial = grenade.Serial;
-            this.TrackedSerials.Add(grenade.Serial);
-            return grenade.Spawn(position);
+            var pickup = base.Spawn(position, item, previousOwner);
+            RLogger.Log("IMPACT GRENADE", "SPAWN", $"{this.Name} spawned");
+            var grenade = item.Base as ThrowableItem;
+            pickup.Scale = Size;
+            grenade.PickupDropModel.Info.Serial = pickup.Serial;
+            this.TrackedSerials.Add(pickup.Serial);
+            return pickup;
         }
 
         internal static readonly Vector3 Size = new Vector3(1f, 0.4f, 1f);
@@ -187,7 +185,7 @@ namespace Mistaken.NotEnoughItems.Items
             while (toSpawn > 0)
             {
                 var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
-                var pickup = Items.ImpItem.Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
+                var pickup = Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10), previousOwner: null);
                 chamber._content.Add(pickup.Base);
                 toSpawn--;
             }

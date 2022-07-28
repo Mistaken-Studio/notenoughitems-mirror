@@ -80,7 +80,7 @@ namespace Mistaken.NotEnoughItems.Items
         {
             FirearmPickup firearm = (FirearmPickup)pickup.Base;
             player.AddItem(pickup);
-            firearm.Status = new FirearmStatus(firearm.Status.Ammo, firearm.Status.Flags, 75);
+            firearm.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
             RLogger.Log("TASER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
 
             this.TrackedSerials.Add(firearm.Info.Serial);
@@ -89,27 +89,24 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position)
+        public override Pickup Spawn(Vector3 position, Player previousOwner = null)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
-            RLogger.Log("TASER", "SPAWN", $"Taser spawned");
-            return this.Spawn(position, firearm);
+            return this.Spawn(position, this.CreateCorrectItem(), previousOwner);
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position, Item item)
+        public override Pickup Spawn(Vector3 position, Item item, Player previousOwner = null)
         {
-            var firearm = item as Exiled.API.Features.Items.Firearm;
-            firearm.Base.PickupDropModel.Info.Serial = firearm.Serial;
-            firearm.Scale = Size;
-            if (this.cooldowns.TryGetValue(item.Serial, out DateTime value))
+            var pickup = base.Spawn(position, item, previousOwner);
+            RLogger.Log("TASER", "SPAWN", $"Taser spawned");
+            pickup.Scale = Size;
+            if (this.cooldowns.TryGetValue(pickup.Serial, out DateTime value))
             {
-                this.cooldowns.Remove(item.Serial);
-                this.cooldowns.Add(firearm.Serial, value);
+                this.cooldowns.Remove(pickup.Serial);
+                this.cooldowns.Add(pickup.Serial, value);
             }
 
-            this.TrackedSerials.Add(firearm.Serial);
-            var pickup = firearm.Spawn(position);
+            this.TrackedSerials.Add(pickup.Serial);
             ((FirearmPickup)pickup.Base).Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
             return pickup;
         }
@@ -285,7 +282,7 @@ namespace Mistaken.NotEnoughItems.Items
             while (toSpawn > 0)
             {
                 var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
-                var pickup = Items.TaserItem.Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10));
+                var pickup = Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10), previousOwner: null);
                 chamber._content.Add(pickup.Base);
                 toSpawn--;
             }
@@ -304,9 +301,9 @@ namespace Mistaken.NotEnoughItems.Items
                     () =>
                     {
                         if (ev.Player.Items.Count >= 8)
-                            Items.TaserItem.Instance.Spawn(ev.Player.Position);
+                            Instance.Spawn(ev.Player.Position, ev.Player);
                         else
-                            Items.TaserItem.Instance.Give(ev.Player);
+                            Instance.Give(ev.Player);
                     },
                     "ChangingRole");
             }
