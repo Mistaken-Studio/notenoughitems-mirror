@@ -103,26 +103,26 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage = true)
         {
-            RLogger.Log("STICKY GRENADE", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
             base.Give(player, displayMessage);
+            RLogger.Log("STICKY GRENADE", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position)
+        public override Pickup Spawn(Vector3 position, Player previousOwner = null)
         {
-            ExplosiveGrenade grenade = (ExplosiveGrenade)Item.Create(this.Type);
+            return this.Spawn(position, this.CreateCorrectItem(), previousOwner);
+        }
+
+        /// <inheritdoc/>
+        public override Pickup Spawn(Vector3 position, Item item, Player previousOwner = null)
+        {
+            var pickup = base.Spawn(position, item, previousOwner);
             RLogger.Log("STICKY GRENADE", "SPAWN", $"{this.Name} spawned");
-            return this.Spawn(position, grenade);
-        }
 
-        /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position, Item item)
-        {
-            var grenade = item as Throwable;
-            if (grenade is null) Log.Debug("Throwable is null");
-            grenade.Base.PickupDropModel.Info.Serial = grenade.Serial;
-            this.TrackedSerials.Add(grenade.Serial);
-            return grenade.Spawn(position);
+            var grenade = item.Base as ThrowableItem;
+            grenade.PickupDropModel.Info.Serial = pickup.Serial;
+            this.TrackedSerials.Add(pickup.Serial);
+            return pickup;
         }
 
         internal static StickyGrenadeItem Instance { get; private set; }

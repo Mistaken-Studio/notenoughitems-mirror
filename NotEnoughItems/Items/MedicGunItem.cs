@@ -58,11 +58,13 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
-            firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.MagazineInserted, 594);
-            player.AddItem(firearm);
+            var pickup = this.CreateCorrectItem().Spawn(Vector3.zero);
+            FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.MagazineInserted, 594);
+            player.AddItem(pickup);
             RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
-            this.TrackedSerials.Add(firearm.Serial);
+
+            this.TrackedSerials.Add(pickup.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
         }
@@ -71,32 +73,30 @@ namespace Mistaken.NotEnoughItems.Items
         public override void Give(Player player, Pickup pickup, bool displayMessage = true)
         {
             FirearmPickup firearm = (FirearmPickup)pickup.Base;
-            firearm.Status = new FirearmStatus(firearm.Status.Ammo, firearm.Status.Flags, 594);
+            firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 594);
             player.AddItem(pickup);
             RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
+
             this.TrackedSerials.Add(firearm.Info.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position)
+        public override Pickup Spawn(Vector3 position, Player previousOwner = null)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
-            firearm.Ammo = this.ClipSize;
-            firearm.Scale = Size;
-            RLogger.Log("MEDIC GUN", "SPAWN", $"Spawned {this.Name}");
-            return this.Spawn(position, firearm);
+            return this.Spawn(position, this.CreateCorrectItem(), previousOwner);
         }
 
         /// <inheritdoc/>
-        public override Pickup Spawn(Vector3 position, Item item)
+        public override Pickup Spawn(Vector3 position, Item item, Player previousOwner = null)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)item;
-            firearm.Scale = Size;
-            this.TrackedSerials.Add(firearm.Serial);
-            var pickup = firearm.Spawn(position);
-            ((FirearmPickup)pickup.Base).Status = new FirearmStatus(firearm.Ammo, FirearmStatusFlags.Cocked, 594);
+            var pickup = base.Spawn(position, item, previousOwner);
+            RLogger.Log("MEDIC GUN", "SPAWN", $"Spawned {this.Name}");
+
+            pickup.Scale = Size;
+            this.TrackedSerials.Add(pickup.Serial);
+            ((FirearmPickup)pickup.Base).Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 594);
             return pickup;
         }
 
@@ -122,7 +122,7 @@ namespace Mistaken.NotEnoughItems.Items
 
             if (this.cooldowns.TryGetValue(ev.Firearm.Serial, out var date) && date > DateTime.Now)
             {
-                ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {(date - DateTime.Now).TotalSeconds} seconds", 3);
+                ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {Math.Ceiling((date - DateTime.Now).TotalSeconds)} seconds", 3);
                 return;
             }
 
