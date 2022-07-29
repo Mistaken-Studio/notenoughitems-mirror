@@ -59,13 +59,15 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
-            firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 82);
-            player.AddItem(firearm);
+            var pickup = this.CreateCorrectItem().Spawn(Vector3.zero);
+            FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 82);
+            player.AddItem(pickup);
             RLogger.Log("GRENADE LAUNCHER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
-            if (!this.grenadeQueue.ContainsKey(firearm.Serial))
-                this.grenadeQueue.Add(firearm.Serial, this.AddRandomGrenades());
-            this.TrackedSerials.Add(firearm.Serial);
+
+            if (!this.grenadeQueue.ContainsKey(pickup.Serial))
+                this.grenadeQueue.Add(pickup.Serial, this.AddRandomGrenades());
+            this.TrackedSerials.Add(pickup.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
         }
@@ -74,9 +76,10 @@ namespace Mistaken.NotEnoughItems.Items
         public override void Give(Player player, Pickup pickup, bool displayMessage = true)
         {
             FirearmPickup firearm = (FirearmPickup)pickup.Base;
-            firearm.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 82);
+            firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 82);
             player.AddItem(pickup);
             RLogger.Log("GRENADE LAUNCHER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
+
             if (!this.grenadeQueue.ContainsKey(firearm.Info.Serial))
                 this.grenadeQueue.Add(firearm.Info.Serial, this.AddRandomGrenades());
             this.TrackedSerials.Add(firearm.Info.Serial);
@@ -95,7 +98,7 @@ namespace Mistaken.NotEnoughItems.Items
         {
             var pickup = base.Spawn(position, item, previousOwner);
             RLogger.Log("GRENADE LAUNCHER", "SPAWN", $"{this.Name} spawned");
-            var firearm = item.Base as InventorySystem.Items.Firearms.Firearm;
+
             pickup.Scale = Size;
             this.TrackedSerials.Add(pickup.Serial);
             if (!this.grenadeQueue.ContainsKey(pickup.Serial))
@@ -125,7 +128,7 @@ namespace Mistaken.NotEnoughItems.Items
 
             if (this.cooldowns.TryGetValue(ev.Firearm.Serial, out var date) && date > DateTime.Now)
             {
-                ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {(date - DateTime.Now).TotalSeconds} seconds", 3);
+                ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {Math.Ceiling((date - DateTime.Now).TotalSeconds)} seconds", 3);
                 return;
             }
 

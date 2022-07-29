@@ -13,6 +13,7 @@ using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using InventorySystem.Items.Firearms;
+using InventorySystem.Items.Pickups;
 using MEC;
 using Mistaken.API;
 using Mistaken.API.CustomItems;
@@ -65,12 +66,13 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, bool displayMessage = true)
         {
-            Exiled.API.Features.Items.Firearm firearm = (Exiled.API.Features.Items.Firearm)Item.Create(this.Type);
-            firearm.Base.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
-            player.AddItem(firearm);
+            var pickup = this.CreateCorrectItem().Spawn(Vector3.zero);
+            FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
+            player.AddItem(pickup);
             RLogger.Log("TASER", "GIVE", $"{this.Name} given to {player.PlayerToString()}");
 
-            this.TrackedSerials.Add(firearm.Serial);
+            this.TrackedSerials.Add(pickup.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
         }
@@ -79,8 +81,8 @@ namespace Mistaken.NotEnoughItems.Items
         public override void Give(Player player, Pickup pickup, bool displayMessage = true)
         {
             FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
             player.AddItem(pickup);
-            firearm.Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 75);
             RLogger.Log("TASER", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
 
             this.TrackedSerials.Add(firearm.Info.Serial);
@@ -99,6 +101,7 @@ namespace Mistaken.NotEnoughItems.Items
         {
             var pickup = base.Spawn(position, item, previousOwner);
             RLogger.Log("TASER", "SPAWN", $"Taser spawned");
+
             pickup.Scale = Size;
             if (this.cooldowns.TryGetValue(pickup.Serial, out DateTime value))
             {
@@ -294,12 +297,13 @@ namespace Mistaken.NotEnoughItems.Items
                 return;
             if (ev.NewRole == RoleType.FacilityGuard)
             {
-                if (ev.Player.Items.Any(x => x.Type == ItemType.GunCOM18))
-                    ev.Items.Remove(ItemType.GunCOM18);
                 Module.CallSafeDelayed(
                     0.25f,
                     () =>
                     {
+                        if (ev.Items.Any(x => x == ItemType.GunCOM18))
+                            ev.Player.RemoveItem(ev.Player.Items.First(x => x.Type == ItemType.GunCOM18));
+
                         if (ev.Player.Items.Count >= 8)
                             Instance.Spawn(ev.Player.Position, ev.Player);
                         else

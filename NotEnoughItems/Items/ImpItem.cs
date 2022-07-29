@@ -116,6 +116,7 @@ namespace Mistaken.NotEnoughItems.Items
         {
             var pickup = base.Spawn(position, item, previousOwner);
             RLogger.Log("IMPACT GRENADE", "SPAWN", $"{this.Name} spawned");
+
             var grenade = item.Base as ThrowableItem;
             pickup.Scale = Size;
             grenade.PickupDropModel.Info.Serial = pickup.Serial;
