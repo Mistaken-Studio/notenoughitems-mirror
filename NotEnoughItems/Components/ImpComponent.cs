@@ -27,7 +27,8 @@ namespace Mistaken.NotEnoughItems.Components
 
         private void OnCollisionEnter(Collision collider)
         {
-            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f) return;
+            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f)
+                return;
             if (collider.gameObject.TryGetComponent<IDestructible>(out var component))
             {
                 if (ReferenceHub.TryGetHubNetID(component.NetworkId, out var referenceHub))

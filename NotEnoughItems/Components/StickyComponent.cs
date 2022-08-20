@@ -38,7 +38,8 @@ namespace Mistaken.NotEnoughItems.Components
 
             this.onEnter = (player) =>
             {
-                if (this.ignoreOwner && player.Id == this.owner) return;
+                if (this.ignoreOwner && player.Id == this.owner)
+                    return;
                 this.grenadePlayer = player;
                 this.onPlayerUsed = true;
                 this.rigidbody.constraints = RigidbodyConstraints.FreezeAll;
@@ -51,7 +52,8 @@ namespace Mistaken.NotEnoughItems.Components
 
         private void OnCollisionEnter(Collision collision)
         {
-            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f) return;
+            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f)
+                return;
             if (!this.onSurfaceUsed && !this.onPlayerUsed)
             {
                 this.rigidbody.constraints = RigidbodyConstraints.FreezeAll;
