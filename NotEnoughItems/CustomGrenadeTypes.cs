@@ -11,6 +11,6 @@ namespace Mistaken.NotEnoughItems
         NONE = 0,
         FRAG,
         STICKY,
-        IMPACT,
+        IMPACT
     }
 }

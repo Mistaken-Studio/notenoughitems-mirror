@@ -13,22 +13,26 @@ namespace Mistaken.NotEnoughItems
 {
     internal class PluginHandler : Plugin<Config, Translation>
     {
-        /// <inheritdoc/>
+        private static Harmony harmony;
+
+        /// <inheritdoc />
         public override string Author => "Mistaken Devs";
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override string Name => "NotEnoughItems";
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override string Prefix => "MNEI";
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override PluginPriority Priority => PluginPriority.Default;
 
-        /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(5, 0, 0);
+        /// <inheritdoc />
+        public override Version RequiredExiledVersion => new(5, 0, 0);
 
-        /// <inheritdoc/>
+        internal static PluginHandler Instance { get; private set; }
+
+        /// <inheritdoc />
         public override void OnEnabled()
         {
             Instance = this;
@@ -38,16 +42,12 @@ namespace Mistaken.NotEnoughItems
             base.OnEnabled();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override void OnDisabled()
         {
             harmony.UnpatchAll();
 
             base.OnDisabled();
         }
-
-        internal static PluginHandler Instance { get; private set; }
-
-        private static Harmony harmony;
     }
 }

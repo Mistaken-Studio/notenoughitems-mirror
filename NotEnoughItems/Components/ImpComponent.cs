@@ -12,35 +12,33 @@ using UnityEngine;
 namespace Mistaken.NotEnoughItems.Components
 {
     /// <summary>
-    /// Handles explosion on impact.
+    ///     Handles explosion on impact.
     /// </summary>
     public class ImpComponent : MonoBehaviour
     {
-        private ExplosionGrenade grenade;
         private DateTime elapsedTime;
+        private ExplosionGrenade grenade;
 
         private void Awake()
         {
-            this.grenade = this.GetComponent<ExplosionGrenade>();
-            this.elapsedTime = DateTime.Now;
+            grenade = GetComponent<ExplosionGrenade>();
+            elapsedTime = DateTime.Now;
         }
 
         private void OnCollisionEnter(Collision collider)
         {
-            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f)
+            if ((DateTime.Now - elapsedTime).TotalSeconds < 0.15f)
                 return;
             if (collider.gameObject.TryGetComponent<IDestructible>(out var component))
-            {
                 if (ReferenceHub.TryGetHubNetID(component.NetworkId, out var referenceHub))
                 {
-                    Log.Debug("Previous owner's netid: " + this.grenade.PreviousOwner);
+                    Log.Debug("Previous owner's netid: " + grenade.PreviousOwner);
                     Log.Debug("component's netid: " + component.NetworkId);
-                    if (this.grenade.PreviousOwner.PlayerId == referenceHub?.playerId)
+                    if (grenade.PreviousOwner.PlayerId == referenceHub?.playerId)
                         return;
                 }
-            }
 
-            this.grenade.TargetTime = 0.1f;
+            grenade.TargetTime = 0.1f;
         }
     }
 }
