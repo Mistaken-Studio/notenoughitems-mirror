@@ -19,14 +19,12 @@ using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Patches
 {
-    [HarmonyPatch(typeof(ThrowableItem), nameof(ThrowableItem.ServerThrow), typeof(float), typeof(float),
-        typeof(Vector3), typeof(Vector3))]
+    [HarmonyPatch(typeof(ThrowableItem), nameof(ThrowableItem.ServerThrow), typeof(float), typeof(float), typeof(Vector3), typeof(Vector3))]
     internal static class ServerThrowPatch
     {
-        public static HashSet<ThrowableItem> ThrowedItems { get; set; } = new();
+        public static HashSet<ThrowableItem> ThrowedItems { get; set; } = new ();
 
-        public static bool Prefix(ThrowableItem __instance, float forceAmount, float upwardFactor, Vector3 torque,
-            Vector3 startVel)
+        public static bool Prefix(ThrowableItem __instance, float forceAmount, float upwardFactor, Vector3 torque, Vector3 startVel)
         {
             if (!ThrowedItems.Contains(__instance)) return true;
 
@@ -35,20 +33,21 @@ namespace Mistaken.NotEnoughItems.Patches
                 __instance._destroyTime = Time.timeSinceLevelLoad + __instance._postThrownAnimationTime;
                 __instance._alreadyFired = true;
                 GameplayTickets.Singleton.HandleItemTickets(__instance);
-                var thrownProjectile = Object.Instantiate(__instance.Projectile,
-                    __instance.Owner.PlayerCameraReference.position, __instance.Owner.PlayerCameraReference.rotation);
-                var pickupSyncInfo = default(PickupSyncInfo);
-                pickupSyncInfo.ItemId = __instance.ItemTypeId;
-                pickupSyncInfo.Locked = !__instance._repickupable;
-                pickupSyncInfo.Serial = __instance.ItemSerial;
-                pickupSyncInfo.Weight = __instance.Weight;
-                pickupSyncInfo.Position = thrownProjectile.transform.position;
-                pickupSyncInfo.Rotation = new LowPrecisionQuaternion(thrownProjectile.transform.rotation);
-                var newInfo = thrownProjectile.NetworkInfo = pickupSyncInfo;
+                var thrownProjectile = Object.Instantiate(__instance.Projectile, __instance.Owner.PlayerCameraReference.position, __instance.Owner.PlayerCameraReference.rotation);
+                var pickupSyncInfo = new PickupSyncInfo()
+                {
+                    ItemId = __instance.ItemTypeId,
+                    Locked = !__instance._repickupable,
+                    Serial = __instance.ItemSerial,
+                    Weight = __instance.Weight,
+                    Position = thrownProjectile.transform.position,
+                    Rotation = new LowPrecisionQuaternion(thrownProjectile.transform.rotation),
+                };
+
+                thrownProjectile.NetworkInfo = pickupSyncInfo;
                 thrownProjectile.PreviousOwner = new Footprint(__instance.Owner);
                 NetworkServer.Spawn(thrownProjectile.gameObject);
-                pickupSyncInfo = default;
-                thrownProjectile.InfoReceived(pickupSyncInfo, newInfo);
+                thrownProjectile.InfoReceived(default, pickupSyncInfo);
                 if (thrownProjectile.TryGetComponent<Rigidbody>(out var component))
                     __instance.PropelBody(component, torque, startVel, forceAmount * 2f, upwardFactor / 1.1f);
 

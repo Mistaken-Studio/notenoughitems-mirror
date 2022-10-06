@@ -24,8 +24,7 @@ namespace Mistaken.NotEnoughItems
 
         public string Taser { get; set; } = "Taser";
 
-        public string TaserHold { get; set; } =
-            "You are holding <color=yellow>Taser</color><br><mspace=0.5em><color=yellow>[<color=green>{0}</color>]</color></mspace>";
+        public string TaserHold { get; set; } = "You are holding <color=yellow>Taser</color><br><mspace=0.5em><color=yellow>[<color=green>{0}</color>]</color></mspace>";
 
         public string TaserNoAmmo { get; set; } = "You have no ammo";
 

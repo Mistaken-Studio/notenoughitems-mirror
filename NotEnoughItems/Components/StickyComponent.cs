@@ -15,7 +15,7 @@ using UnityEngine;
 namespace Mistaken.NotEnoughItems.Components
 {
     /// <summary>
-    ///     Handles freeze on impact with surfaces.
+    /// Handles freeze on impact with surfaces.
     /// </summary>
     public class StickyComponent : MonoBehaviour
     {
@@ -32,40 +32,42 @@ namespace Mistaken.NotEnoughItems.Components
 
         private void Awake()
         {
-            rigidbody = GetComponent<Rigidbody>();
-            owner = GetComponent<ExplosionGrenade>().PreviousOwner.PlayerId;
-            ignoreOwner = true;
-            elapsedTime = DateTime.Now;
+            this.rigidbody = this.GetComponent<Rigidbody>();
+            this.owner = this.GetComponent<ExplosionGrenade>().PreviousOwner.PlayerId;
+            this.ignoreOwner = true;
+            this.elapsedTime = DateTime.Now;
 
-            onEnter = player =>
+            this.onEnter = player =>
             {
-                if (ignoreOwner && player.Id == owner)
+                if (this.ignoreOwner && player.Id == this.owner)
                     return;
-                grenadePlayer = player;
-                onPlayerUsed = true;
-                rigidbody.constraints = RigidbodyConstraints.FreezeAll;
-                positionDiff = grenadePlayer.Position - transform.position;
+
+                this.grenadePlayer = player;
+                this.onPlayerUsed = true;
+                this.rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+                this.positionDiff = this.grenadePlayer.Position - this.transform.position;
             };
 
-            inRange = InRange.Spawn(transform, Vector3.zero, new Vector3(0.05f, 0.05f, 0.05f), onEnter);
-            Timing.CallDelayed(0.5f, () => ignoreOwner = false);
+            this.inRange = InRange.Spawn(this.transform, Vector3.zero, new Vector3(0.05f, 0.05f, 0.05f), this.onEnter);
+            Timing.CallDelayed(0.5f, () => this.ignoreOwner = false);
         }
 
         private void FixedUpdate()
         {
-            if (onPlayerUsed)
-                transform.position = grenadePlayer.Position + positionDiff;
+            if (this.onPlayerUsed)
+                this.transform.position = this.grenadePlayer.Position + this.positionDiff;
         }
 
         private void OnCollisionEnter(Collision collision)
         {
-            if ((DateTime.Now - elapsedTime).TotalSeconds < 0.15f)
+            if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f)
                 return;
-            if (!onSurfaceUsed && !onPlayerUsed)
+
+            if (!this.onSurfaceUsed && !this.onPlayerUsed)
             {
-                rigidbody.constraints = RigidbodyConstraints.FreezeAll;
-                NetworkServer.Destroy(inRange.gameObject);
-                onSurfaceUsed = true;
+                this.rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+                NetworkServer.Destroy(this.inRange.gameObject);
+                this.onSurfaceUsed = true;
             }
         }
     }

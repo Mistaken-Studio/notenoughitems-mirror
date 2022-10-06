@@ -21,10 +21,9 @@ namespace Mistaken.NotEnoughItems.Patches
     [HarmonyPatch(typeof(ExplosionGrenade), nameof(ExplosionGrenade.ExplodeDestructible))]
     internal static class ExplodeDestructiblesPatch
     {
-        public static HashSet<uint> Grenades { get; set; } = new();
+        public static HashSet<uint> Grenades { get; set; } = new ();
 
-        private static bool Prefix(IDestructible dest, Footprint attacker, Vector3 pos, ExplosionGrenade setts,
-            ref bool __result)
+        private static bool Prefix(IDestructible dest, Footprint attacker, Vector3 pos, ExplosionGrenade setts, ref bool __result)
         {
             if (!Grenades.Contains(setts.netId)) return true;
 
@@ -38,20 +37,16 @@ namespace Mistaken.NotEnoughItems.Patches
             var magnitude = vector.magnitude;
             var num = setts._playerDamageOverDistance.Evaluate(magnitude);
             var flag = ReferenceHub.TryGetHubNetID(dest.NetworkId, out var hub);
-            if (flag && hub.characterClassManager.CurRole.team == Team.SCP) num *= setts._scpDamageMultiplier;
+            if (flag && hub.characterClassManager.CurRole.team == Team.SCP)
+                num *= setts._scpDamageMultiplier;
 
-            var force = (1f - magnitude / setts._maxRadius) * (vector / magnitude) * setts._rigidbodyBaseForce +
-                        Vector3.up * setts._rigidbodyLiftForce;
-
+            var force = ((1f - (magnitude / setts._maxRadius)) * (vector / magnitude) * setts._rigidbodyBaseForce) + (Vector3.up * setts._rigidbodyLiftForce);
             num /= 2.8f;
-
-            if (num > 0f && dest.Damage(num, new ExplosionDamageHandler(attacker, force, num, 80), dest.CenterOfMass) &&
-                flag)
+            if (num > 0f && dest.Damage(num, new ExplosionDamageHandler(attacker, force, num, 80), dest.CenterOfMass) && flag)
             {
                 var num2 = setts._effectDurationOverDistance.Evaluate(magnitude);
                 var flag2 = attacker.Hub == hub;
-                if (num2 > 0f && (flag2 ||
-                                  HitboxIdentity.CheckFriendlyFire(attacker.Role, hub.characterClassManager.CurClass)))
+                if (num2 > 0f && (flag2 || HitboxIdentity.CheckFriendlyFire(attacker.Role, hub.characterClassManager.CurClass)))
                 {
                     var minimalDuration = setts._minimalDuration;
                     ExplosionGrenade.TriggerEffect<Burned>(hub, num2 * setts._burnedDuration, minimalDuration);
@@ -59,7 +54,8 @@ namespace Mistaken.NotEnoughItems.Patches
                     ExplosionGrenade.TriggerEffect<Concussed>(hub, num2 * setts._concussedDuration, minimalDuration);
                 }
 
-                if (!flag2 && attacker.Hub != null) Hitmarker.SendHitmarker(attacker.Hub, 1f);
+                if (!flag2 && attacker.Hub != null)
+                    Hitmarker.SendHitmarker(attacker.Hub, 1f);
 
                 hub.inventory.connectionToClient.Send(new GunHitMessage(false, num, pos));
             }

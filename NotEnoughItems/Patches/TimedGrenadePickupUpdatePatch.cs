@@ -22,9 +22,9 @@ namespace Mistaken.NotEnoughItems.Patches
         private static bool Prefix(TimedGrenadePickup __instance)
         {
             ThrowableItem throwableItem;
-            if (!__instance._replaceNextFrame ||
-                !InventoryItemLoader.AvailableItems.TryGetValue(__instance.Info.ItemId, out var value) ||
-                (object)(throwableItem = value as ThrowableItem) == null) return false;
+            if (!__instance._replaceNextFrame || !InventoryItemLoader.AvailableItems.TryGetValue(__instance.Info.ItemId, out var value) || (object)(throwableItem = value as ThrowableItem) == null)
+                return false;
+
             var thrownProjectile = Object.Instantiate(throwableItem.Projectile);
             if (thrownProjectile.TryGetComponent<Rigidbody>(out var component))
             {
@@ -39,18 +39,22 @@ namespace Mistaken.NotEnoughItems.Patches
             thrownProjectile.PreviousOwner = __instance._attacker;
             NetworkServer.Spawn(thrownProjectile.gameObject);
             if (MistakenCustomItems.IMPACT_GRENADE.TryGet(out var item) && item is not null)
+            {
                 if (item.TrackedSerials.Contains(__instance.Info.Serial))
                 {
                     ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
                     thrownProjectile.gameObject.AddComponent<ImpComponent>();
                 }
+            }
 
             if (MistakenCustomItems.STICKY_GRENADE.TryGet(out item) && item is not null)
+            {
                 if (item.TrackedSerials.Contains(__instance.Info.Serial))
                 {
                     ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
                     thrownProjectile.gameObject.AddComponent<StickyComponent>();
                 }
+            }
 
             thrownProjectile.InfoReceived(default, __instance.Info);
             thrownProjectile.ServerActivate();
