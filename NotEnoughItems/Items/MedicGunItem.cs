@@ -11,19 +11,21 @@ using Exiled.API.Features;
 using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
+using Exiled.Events.EventArgs;
 using InventorySystem.Items.Firearms;
 using InventorySystem.Items.Firearms.BasicMessages;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
 using Mistaken.RoundLogger;
+using PlayerStatsSystem;
 using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Items
 {
     /// <inheritdoc/>
     [CustomItem(ItemType.GunRevolver)]
-    public class MedicGunItem : MistakenCustomWeapon
+    public sealed class MedicGunItem : MistakenCustomWeapon
     {
         /// <inheritdoc/>
         public override MistakenCustomItems CustomItem => MistakenCustomItems.MEDIC_GUN;
@@ -59,11 +61,10 @@ namespace Mistaken.NotEnoughItems.Items
         public override void Give(Player player, bool displayMessage)
         {
             var pickup = this.CreateCorrectItem().Spawn(Vector3.zero);
-            FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            var firearm = (FirearmPickup)pickup.Base;
             firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.MagazineInserted, 594);
             player.AddItem(pickup);
             RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
-
             this.TrackedSerials.Add(pickup.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
@@ -72,11 +73,10 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         public override void Give(Player player, Pickup pickup, bool displayMessage = true)
         {
-            FirearmPickup firearm = (FirearmPickup)pickup.Base;
+            var firearm = (FirearmPickup)pickup.Base;
             firearm.NetworkStatus = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 594);
             player.AddItem(pickup);
             RLogger.Log("MEDIC GUN", "GIVE", $"Given {this.Name} to {player.PlayerToString()}");
-
             this.TrackedSerials.Add(firearm.Info.Serial);
             if (displayMessage)
                 this.ShowPickedUpMessage(player);
@@ -93,14 +93,11 @@ namespace Mistaken.NotEnoughItems.Items
         {
             var pickup = base.Spawn(position, item, previousOwner);
             RLogger.Log("MEDIC GUN", "SPAWN", $"Spawned {this.Name}");
-
             pickup.Scale = Size;
             this.TrackedSerials.Add(pickup.Serial);
             ((FirearmPickup)pickup.Base).Status = new FirearmStatus(this.ClipSize, FirearmStatusFlags.Cocked, 594);
             return pickup;
         }
-
-        internal static readonly Vector3 Size = new Vector3(2, 2, 2);
 
         /// <inheritdoc/>
         protected override void ShowPickedUpMessage(Player player)
@@ -110,7 +107,7 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnReloading(Exiled.Events.EventArgs.ReloadingWeaponEventArgs ev)
+        protected override void OnReloading(ReloadingWeaponEventArgs ev)
         {
             base.OnReloading(ev);
             ev.IsAllowed = false;
@@ -120,7 +117,7 @@ namespace Mistaken.NotEnoughItems.Items
                 return;
             }
 
-            if (this.cooldowns.TryGetValue(ev.Firearm.Serial, out var date) && date > DateTime.Now)
+            if (Cooldowns.TryGetValue(ev.Firearm.Serial, out var date) && date > DateTime.Now)
             {
                 ev.Player.SetGUI("grenadeLauncherWarn", PseudoGUIPosition.BOTTOM, $"You're on a reload cooldown, you need to wait {Math.Ceiling((date - DateTime.Now).TotalSeconds)} seconds", 3);
                 return;
@@ -132,9 +129,10 @@ namespace Mistaken.NotEnoughItems.Items
                 return;
             }
 
-            if (!this.cooldowns.ContainsKey(ev.Firearm.Serial))
-                this.cooldowns.Add(ev.Firearm.Serial, DateTime.Now);
-            this.cooldowns[ev.Firearm.Serial] = DateTime.Now.AddSeconds(5);
+            if (!Cooldowns.ContainsKey(ev.Firearm.Serial))
+                Cooldowns.Add(ev.Firearm.Serial, DateTime.Now);
+
+            Cooldowns[ev.Firearm.Serial] = DateTime.Now.AddSeconds(5);
             RLogger.Log("MEDIC GUN", "RELOAD", $"Player {ev.Player.PlayerToString()} reloaded {this.Name}");
             ev.Player.RemoveItem(ev.Player.Items.First(i => i.Type == ItemType.Adrenaline));
             ev.Player.SetGUI("MedicGunWarn", PseudoGUIPosition.BOTTOM, PluginHandler.Instance.Translation.ReloadedInfo, 3);
@@ -144,23 +142,24 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
-        protected override void OnUnloadingWeapon(Exiled.Events.EventArgs.UnloadingWeaponEventArgs ev)
+        protected override void OnUnloadingWeapon(UnloadingWeaponEventArgs ev)
         {
             base.OnUnloadingWeapon(ev);
             ev.IsAllowed = false;
         }
 
         /// <inheritdoc/>
-        protected override void OnShot(Exiled.Events.EventArgs.ShotEventArgs ev)
+        protected override void OnShot(ShotEventArgs ev)
         {
             base.OnShot(ev);
-            if (!(ev.Target is null))
+            if (ev.Target is not null)
             {
                 var hpToHeal = Math.Min(ev.Target.MaxHealth - ev.Target.Health, PluginHandler.Instance.Config.HealAmount);
                 var ahpToHeal = (PluginHandler.Instance.Config.HealAmount - hpToHeal) * 2f;
                 ev.Target.Health += hpToHeal;
                 if (Math.Floor(ahpToHeal) != 0)
-                    ((PlayerStatsSystem.AhpStat)ev.Target.ReferenceHub.playerStats.StatModules[1]).ServerAddProcess(ahpToHeal, ahpToHeal, ahpToHeal / 10f, 0.65f, 15f, false);
+                    ((AhpStat)ev.Target.ReferenceHub.playerStats.StatModules[1]).ServerAddProcess(ahpToHeal, ahpToHeal, ahpToHeal / 10f, 0.65f, 15f, false);
+
                 RLogger.Log("MEDIC GUN", "HEAL", $"Player {ev.Shooter.PlayerToString()} hit player {ev.Target.PlayerToString()} and regenerated {hpToHeal} hp and {ahpToHeal} ahp");
                 ev.CanHurt = false;
                 Hitmarker.SendHitmarker(ev.Shooter.Connection, 2f);
@@ -172,6 +171,15 @@ namespace Mistaken.NotEnoughItems.Items
         {
         }
 
-        private readonly Dictionary<ushort, DateTime> cooldowns = new Dictionary<ushort, DateTime>();
+        /// <inheritdoc/>
+        protected override void OnWaitingForPlayers()
+        {
+            base.OnWaitingForPlayers();
+            Cooldowns.Clear();
+        }
+
+        private static readonly Vector3 Size = new (2, 2, 2);
+
+        private static readonly Dictionary<ushort, DateTime> Cooldowns = new ();
     }
 }

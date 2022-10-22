@@ -11,19 +11,25 @@ using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.Events.EventArgs;
+using Footprinting;
+using InventorySystem.Items.Pickups;
 using InventorySystem.Items.ThrowableProjectiles;
+using MapGeneration.Distributors;
 using Mirror;
 using Mistaken.API.CustomItems;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
+using Mistaken.NotEnoughItems.Components;
+using Mistaken.NotEnoughItems.Patches;
 using Mistaken.RoundLogger;
+using Respawning;
 using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Items
 {
     /// <inheritdoc/>
     [CustomItem(ItemType.GrenadeHE)]
-    public class ImpItem : MistakenCustomGrenade
+    public sealed class ImpItem : MistakenCustomGrenade
     {
         /// <summary>
         /// Throws Impact Grenade.
@@ -33,14 +39,12 @@ namespace Mistaken.NotEnoughItems.Items
         /// <returns>Thrown projectile.</returns>
         public static ThrownProjectile Throw(ReferenceHub ownerHub, Throwable grenade = null)
         {
-            if (ownerHub is null)
-                ownerHub = Server.Host.ReferenceHub;
-            if (grenade is null)
-                grenade = (Throwable)Item.Create(ItemType.GrenadeHE);
+            ownerHub ??= Server.Host.ReferenceHub;
+            grenade ??= (Throwable)Item.Create(ItemType.GrenadeHE);
             grenade.Base.Owner = ownerHub;
-            Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
-            ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
-            InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
+            GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
+            var thrownProjectile = Object.Instantiate(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
+            var pickupSyncInfo = new PickupSyncInfo
             {
                 ItemId = grenade.Type,
                 Locked = !grenade.Base._repickupable,
@@ -51,15 +55,14 @@ namespace Mistaken.NotEnoughItems.Items
             };
 
             thrownProjectile.NetworkInfo = pickupSyncInfo;
-            thrownProjectile.PreviousOwner = new Footprinting.Footprint(ownerHub);
+            thrownProjectile.PreviousOwner = new Footprint(ownerHub);
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
-            Patches.ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
-            thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
-            Rigidbody rb;
-            if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
+            ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
+            thrownProjectile.InfoReceived(default, pickupSyncInfo);
+            if (thrownProjectile.TryGetComponent<Rigidbody>(out var rb))
                 grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), ownerHub.playerMovementSync.PlayerVelocity, 35, 0.18f);
 
-            thrownProjectile.gameObject.AddComponent<Components.ImpComponent>();
+            thrownProjectile.gameObject.AddComponent<ImpComponent>();
             thrownProjectile.ServerActivate();
             return thrownProjectile;
         }
@@ -116,15 +119,12 @@ namespace Mistaken.NotEnoughItems.Items
         {
             var pickup = base.Spawn(position, item, previousOwner);
             RLogger.Log("IMPACT GRENADE", "SPAWN", $"{this.Name} spawned");
-
             var grenade = item.Base as ThrowableItem;
             pickup.Scale = Size;
             grenade.PickupDropModel.Info.Serial = pickup.Serial;
             this.TrackedSerials.Add(pickup.Serial);
             return pickup;
         }
-
-        internal static readonly Vector3 Size = new Vector3(1f, 0.4f, 1f);
 
         internal static ImpItem Instance { get; private set; }
 
@@ -143,6 +143,20 @@ namespace Mistaken.NotEnoughItems.Items
         }
 
         /// <inheritdoc/>
+        protected override void OnPickingUp(PickingUpItemEventArgs ev)
+        {
+            RLogger.Log("IMPACT GRENADE", "PICKING UP", $"{ev.Player.Nickname} started picking up {this.Name} ({this.Type})");
+            base.OnPickingUp(ev);
+        }
+
+        /// <inheritdoc/>
+        protected override void OnAcquired(Player player)
+        {
+            RLogger.Log("IMPACT GRENADE", "ACQUIRED", $"{player.Nickname} acquired {this.Name} ({this.Type})");
+            base.OnAcquired(player);
+        }
+
+        /// <inheritdoc/>
         protected override void ShowPickedUpMessage(Player player)
         {
             RLogger.Log("IMPACT GRENADE", "PICKUP", $"{player.PlayerToString()} Picked up an {this.Name}");
@@ -156,7 +170,7 @@ namespace Mistaken.NotEnoughItems.Items
             if (ev.RequestType != ThrowRequest.BeginThrow)
             {
                 RLogger.Log("IMPACT GRENADE", "THROW", $"{ev.Player.PlayerToString()} threw an {this.Name}");
-                Patches.ServerThrowPatch.ThrowedItems.Add(ev.Item.Base);
+                ServerThrowPatch.ThrowedItems.Add(ev.Item.Base);
                 ev.Player.RemoveItem(ev.Item);
             }
         }
@@ -165,9 +179,17 @@ namespace Mistaken.NotEnoughItems.Items
         protected override void OnExploding(ExplodingGrenadeEventArgs ev)
         {
             base.OnExploding(ev);
-            RLogger.Log("IMPACT GRENADE", "EXPLODED", $"Impact grenade exploded");
+            RLogger.Log("IMPACT GRENADE", "EXPLODED", "Impact grenade exploded");
             foreach (var player in ev.TargetsToAffect)
                 RLogger.Log("IMPACT GRENADE", "HURT", $"{player.PlayerToString()} was hurt by an {this.Name}");
+        }
+
+        /// <inheritdoc/>
+        protected override void OnWaitingForPlayers()
+        {
+            base.OnWaitingForPlayers();
+            ExplodeDestructiblesPatch.Grenades.Clear();
+            ServerThrowPatch.ThrowedItems.Clear();
         }
 
         /// <inheritdoc/>
@@ -175,17 +197,17 @@ namespace Mistaken.NotEnoughItems.Items
         {
         }
 
+        private static readonly Vector3 Size = new (1f, 0.4f, 1f);
+
         private void Server_RoundStarted()
         {
-            Patches.ExplodeDestructiblesPatch.Grenades.Clear();
-            Patches.ServerThrowPatch.ThrowedItems.Clear();
-            var structureLockers = UnityEngine.Object.FindObjectsOfType<MapGeneration.Distributors.SpawnableStructure>().Where(x => x.StructureType == MapGeneration.Distributors.StructureType.LargeGunLocker);
-            var lockers = structureLockers.Select(x => x as MapGeneration.Distributors.Locker).Where(x => x.Chambers.Length > 8).ToArray();
-            var locker = lockers[UnityEngine.Random.Range(0, lockers.Length)];
-            int toSpawn = 6;
+            var structureLockers = Object.FindObjectsOfType<SpawnableStructure>().Where(x => x.StructureType == StructureType.LargeGunLocker);
+            var lockers = structureLockers.Select(x => x as Locker).Where(x => x.Chambers.Length > 8).ToArray();
+            var locker = lockers[Random.Range(0, lockers.Length)];
+            var toSpawn = 6;
             while (toSpawn > 0)
             {
-                var chamber = locker.Chambers[UnityEngine.Random.Range(0, locker.Chambers.Length)];
+                var chamber = locker.Chambers[Random.Range(0, locker.Chambers.Length)];
                 var pickup = Instance.Spawn(chamber._spawnpoint.position + (Vector3.up / 10), previousOwner: null);
                 chamber._content.Add(pickup.Base);
                 toSpawn--;

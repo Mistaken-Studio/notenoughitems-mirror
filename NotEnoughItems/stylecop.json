@@ -4,9 +4,6 @@
     "documentationRules": {
       "companyName": "Mistaken",
       "headerDecoration": "-----------------------------------------------------------------------",
-
-
-
       "documentExposedElements": false,
       "documentInterfaces": false,
       "documentInternalElements": false,
@@ -15,7 +12,13 @@
     },
     "orderingRules": {
       "usingDirectivesPlacement": "outsideNamespace",
-      "elementOrder": [ "accessibility", "static", "readonly", "constant", "kind" ]
+      "elementOrder": [
+        "accessibility",
+        "static",
+        "readonly",
+        "constant",
+        "kind"
+      ]
     },
     "maintainabilityRules": {
       "topLevelTypes": [

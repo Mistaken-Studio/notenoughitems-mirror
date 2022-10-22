@@ -16,8 +16,8 @@ namespace Mistaken.NotEnoughItems.Components
     /// </summary>
     public class ImpComponent : MonoBehaviour
     {
-        private ExplosionGrenade grenade;
         private DateTime elapsedTime;
+        private ExplosionGrenade grenade;
 
         private void Awake()
         {
@@ -29,6 +29,7 @@ namespace Mistaken.NotEnoughItems.Components
         {
             if ((DateTime.Now - this.elapsedTime).TotalSeconds < 0.15f)
                 return;
+
             if (collider.gameObject.TryGetComponent<IDestructible>(out var component))
             {
                 if (ReferenceHub.TryGetHubNetID(component.NetworkId, out var referenceHub))

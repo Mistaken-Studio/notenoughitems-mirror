@@ -11,6 +11,8 @@ using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.Events.EventArgs;
+using Footprinting;
+using InventorySystem.Items.Pickups;
 using InventorySystem.Items.ThrowableProjectiles;
 using MEC;
 using Mirror;
@@ -18,14 +20,17 @@ using Mistaken.API.CustomItems;
 using Mistaken.API.Diagnostics;
 using Mistaken.API.Extensions;
 using Mistaken.API.GUI;
+using Mistaken.NotEnoughItems.Components;
+using Mistaken.NotEnoughItems.Patches;
 using Mistaken.RoundLogger;
+using Respawning;
 using UnityEngine;
 
 namespace Mistaken.NotEnoughItems.Items
 {
     /// <inheritdoc/>
     [CustomItem(ItemType.GrenadeHE)]
-    public class StickyGrenadeItem : MistakenCustomGrenade
+    public sealed class StickyGrenadeItem : MistakenCustomGrenade
     {
         /// <summary>
         /// Throws Sticky Grenade.
@@ -35,14 +40,13 @@ namespace Mistaken.NotEnoughItems.Items
         /// <returns>Thrown projectile.</returns>
         public static ThrownProjectile Throw(ReferenceHub ownerHub, Throwable grenade = null)
         {
-            if (ownerHub is null)
-                ownerHub = Server.Host.ReferenceHub;
-            if (grenade is null)
-                grenade = (Throwable)Item.Create(ItemType.GrenadeHE);
+            ownerHub ??= Server.Host.ReferenceHub;
+            grenade ??= (Throwable)Item.Create(ItemType.GrenadeHE);
+
             grenade.Base.Owner = ownerHub;
-            Respawning.GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
-            ThrownProjectile thrownProjectile = UnityEngine.Object.Instantiate<ThrownProjectile>(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
-            InventorySystem.Items.Pickups.PickupSyncInfo pickupSyncInfo = new InventorySystem.Items.Pickups.PickupSyncInfo
+            GameplayTickets.Singleton.HandleItemTickets(grenade.Base);
+            var thrownProjectile = Object.Instantiate(grenade.Base.Projectile, ownerHub.PlayerCameraReference.position, ownerHub.PlayerCameraReference.rotation);
+            var pickupSyncInfo = new PickupSyncInfo
             {
                 ItemId = grenade.Type,
                 Locked = !grenade.Base._repickupable,
@@ -53,15 +57,14 @@ namespace Mistaken.NotEnoughItems.Items
             };
 
             thrownProjectile.NetworkInfo = pickupSyncInfo;
-            thrownProjectile.PreviousOwner = new Footprinting.Footprint(ownerHub);
+            thrownProjectile.PreviousOwner = new Footprint(ownerHub);
             NetworkServer.Spawn(thrownProjectile.gameObject, ownerConnection: null);
-            Patches.ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
-            thrownProjectile.InfoReceived(default(InventorySystem.Items.Pickups.PickupSyncInfo), pickupSyncInfo);
-            Rigidbody rb;
-            if (thrownProjectile.TryGetComponent<Rigidbody>(out rb))
+            ExplodeDestructiblesPatch.Grenades.Add(thrownProjectile.netId);
+            thrownProjectile.InfoReceived(default, pickupSyncInfo);
+            if (thrownProjectile.TryGetComponent<Rigidbody>(out var rb))
                 grenade.Base.PropelBody(rb, new Vector3(10, 10, 0), ownerHub.playerMovementSync.PlayerVelocity, 35, 0.18f);
 
-            thrownProjectile.gameObject.AddComponent<Components.StickyComponent>();
+            thrownProjectile.gameObject.AddComponent<StickyComponent>();
             thrownProjectile.ServerActivate();
             return thrownProjectile;
         }
@@ -118,7 +121,6 @@ namespace Mistaken.NotEnoughItems.Items
         {
             var pickup = base.Spawn(position, item, previousOwner);
             RLogger.Log("STICKY GRENADE", "SPAWN", $"{this.Name} spawned");
-
             var grenade = item.Base as ThrowableItem;
             grenade.PickupDropModel.Info.Serial = pickup.Serial;
             this.TrackedSerials.Add(pickup.Serial);
@@ -134,7 +136,7 @@ namespace Mistaken.NotEnoughItems.Items
             if (ev.RequestType != ThrowRequest.BeginThrow)
             {
                 RLogger.Log("STICKY GRENADE", "THROW", $"Player {ev.Player.PlayerToString()} threw a {this.Name}");
-                Patches.ServerThrowPatch.ThrowedItems.Add(ev.Item.Base);
+                ServerThrowPatch.ThrowedItems.Add(ev.Item.Base);
                 ev.Player.RemoveItem(ev.Item);
             }
         }
@@ -149,7 +151,7 @@ namespace Mistaken.NotEnoughItems.Items
         /// <inheritdoc/>
         protected override void ShowSelectedMessage(Player player)
         {
-            Module.RunSafeCoroutine(this.UpdateInterface(player), "StickyGrenadeItem_UpdateInterface");
+            Module.RunSafeCoroutine(this.UpdateInterface(player), nameof(this.UpdateInterface));
         }
 
         private IEnumerator<float> UpdateInterface(Player player)
