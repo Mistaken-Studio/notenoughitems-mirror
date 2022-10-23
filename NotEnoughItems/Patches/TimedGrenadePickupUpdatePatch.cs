@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using HarmonyLib;
+/*using HarmonyLib;
 using InventorySystem;
 using InventorySystem.Items.ThrowableProjectiles;
 using Mirror;
@@ -64,4 +64,4 @@ namespace Mistaken.NotEnoughItems.Patches
             return false;
         }
     }
-}
+}*/
