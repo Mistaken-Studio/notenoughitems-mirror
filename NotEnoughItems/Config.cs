@@ -4,18 +4,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.ComponentModel;
-using Mistaken.Updater.Config;
+using Exiled.API.Interfaces;
 
 namespace Mistaken.NotEnoughItems
 {
-    internal class Config : IAutoUpdatableConfig
+    internal sealed class Config : IConfig
     {
         public bool IsEnabled { get; set; } = true;
 
         [Description("If true then debug will be displayed")]
-        public bool VerbouseOutput { get; set; }
+        public bool VerboseOutput { get; set; }
 
         [Description("Taser Settings")]
         public float HitCooldown { get; set; } = 90f;
@@ -24,8 +23,5 @@ namespace Mistaken.NotEnoughItems
 
         [Description("Medic Gun Settings")]
         public float HealAmount { get; set; } = 35;
-
-        [Description("Auto Update Settings")]
-        public Dictionary<string, string> AutoUpdateConfig { get; set; }
     }
 }
