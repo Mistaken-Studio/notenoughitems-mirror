@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Features.Attributes;
@@ -166,4 +166,4 @@ namespace Mistaken.NotEnoughItems.Items
             player.SetGUI("stickyhold", PseudoGUIPosition.BOTTOM, null);
         }
     }
-}
+}*/
