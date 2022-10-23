@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 using Footprinting;
 using HarmonyLib;
 using InventorySystem.Items.Pickups;
@@ -68,4 +68,4 @@ namespace Mistaken.NotEnoughItems.Patches
             return false;
         }
     }
-}
+}*/

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 using CustomPlayerEffects;
 using Footprinting;
 using HarmonyLib;
@@ -64,4 +64,4 @@ namespace Mistaken.NotEnoughItems.Patches
             return false;
         }
     }
-}
+}*/
